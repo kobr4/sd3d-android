@@ -1,0 +1,19 @@
+uniform mat4 u_MVPMatrix;
+attribute vec4 a_Position;
+attribute vec2 a_Texcoords;
+attribute vec4 a_Normal;
+varying vec2 v_texture_coordinate;
+varying float v_color;
+varying vec4 v_normal;		  
+vec4 light4;
+
+void main() 
+{
+  gl_Position = u_MVPMatrix * a_Position;
+  gl_Position = a_Position;		  
+  v_texture_coordinate = a_Texcoords;
+  light4 = vec4( 10.0, -10.0, 10.0, 0.0);
+  v_normal = a_Normal;			  
+  v_color = clamp(dot(light4,a_Normal),0.3,1.0);
+  v_color = dot(normalize(light4),normalize(a_Normal));
+}     
