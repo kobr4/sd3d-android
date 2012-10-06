@@ -1,0 +1,77 @@
+precision mediump float;
+
+uniform sampler2D my_color_texture;
+uniform ivec4 u_RenderStateVector;
+uniform vec4 u_ColorVector;
+
+varying vec4 v_color;	
+varying vec4 v_normal;		  
+varying vec2 v_texture_coordinate;		  
+
+void main()
+{
+  		
+  //Has Texture
+  if (u_RenderStateVector[0] == 1)
+  {
+    //Render light + texture
+    if (u_RenderStateVector[2] == 1)
+    {
+      vec3 lightdir = vec3( -10.0, -10.0, -10.0);
+    
+      float colorlight = max(dot(normalize(lightdir),v_normal.xyz),0.5);
+      gl_FragColor = colorlight * texture2D(my_color_texture, v_texture_coordinate);
+      gl_FragColor[3] = texture2D(my_color_texture, v_texture_coordinate)[3];
+    }
+    else
+    {
+      //Render texture + color
+      if (u_RenderStateVector[1] == 1)
+    {
+      gl_FragColor = (texture2D(my_color_texture, v_texture_coordinate) * v_color);
+    }
+    //Render texture + uniform color
+    else if (u_RenderStateVector[1] == 2)
+      {
+        gl_FragColor = (texture2D(my_color_texture, v_texture_coordinate) * u_ColorVector);    
+      }
+      else
+      {
+        gl_FragColor = texture2D(my_color_texture, v_texture_coordinate);
+      }
+    }
+  }
+  else
+  {
+    //Render light + color
+    if (u_RenderStateVector[2] == 1)
+    {
+      vec3 lightdir = vec3( 10.0, -10.0, 10.0);
+    
+      float colorlight = max(dot(normalize(lightdir),v_normal.xyz),0.5);
+      gl_FragColor[0] = colorlight;
+      gl_FragColor[1] = colorlight;
+      gl_FragColor[2] = colorlight;
+      gl_FragColor[3] = 1.0;
+    }
+    else
+    {
+      //Render color
+      if (u_RenderStateVector[1] == 1)
+      {
+        gl_FragColor = v_color;
+      }
+      //Render color uniform
+      else if (u_RenderStateVector[1] == 2)
+      {
+        gl_FragColor = u_ColorVector;    
+      }
+      else
+      {
+        gl_FragColor = vec4(0,0,0,0);
+      }
+    }
+  
+  }
+ 
+}

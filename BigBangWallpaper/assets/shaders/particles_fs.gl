@@ -1,0 +1,23 @@
+precision mediump float;
+
+uniform sampler2D my_color_texture;
+uniform ivec4 u_RenderStateVector;
+uniform vec4 u_ColorVector;
+
+
+varying vec4 v_color;	
+varying vec4 v_normal;		  
+varying vec2 v_texture_coordinate;		  
+
+void main()
+{
+  	//gl_FragColor = v_color;
+  	gl_FragColor = texture2D(my_color_texture, v_texture_coordinate);
+  	if (gl_FragColor.xyz != vec3(1.0,1.0,1.0))
+  	{
+  		gl_FragColor[3] = 0.0;
+  	}
+  	else gl_FragColor[3] = v_color[3];
+	//gl_FragColor = vec4(.0,1.0,1.0,1.0);
+ 
+}
