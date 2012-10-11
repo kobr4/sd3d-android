@@ -2,8 +2,8 @@ package org.nicolasmy.sd3d.gfx.entity;
 
 import java.util.ArrayList;
 
-import org.nicolasmy.sd3d.gfx.Sd3dVector;
 import org.nicolasmy.sd3d.interfaces.Sd3dCollisionAgainstInterface;
+import org.nicolasmy.sd3d.math.Sd3dVector;
 
 import android.util.Log;
 

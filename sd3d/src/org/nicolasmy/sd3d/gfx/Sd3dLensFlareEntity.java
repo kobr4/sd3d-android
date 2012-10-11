@@ -7,6 +7,8 @@ import java.nio.FloatBuffer;
 import org.nicolasmy.sd3d.gfx.Sd3dScene.Sd3dCamera;
 import org.nicolasmy.sd3d.gfx.entity.Sd3dGameCameraEntity;
 import org.nicolasmy.sd3d.gfx.entity.Sd3dGameEntity;
+import org.nicolasmy.sd3d.gfx.renderer.Sd3dRendererInterface;
+import org.nicolasmy.sd3d.math.Sd3dVector2d;
 
 import android.util.Log;
 
@@ -75,15 +77,15 @@ public class Sd3dLensFlareEntity extends Sd3dGameEntity {
     	float z = 0.f;
     	mesh.mMeshPosition = new float[3];
     	mesh.mIndices = CharBuffer.allocate(nbTriangle*3);
-    	mesh.mVertices = FloatBuffer.allocate(nbTriangle * 3 * 3);
-    	mesh.mTexCoords = FloatBuffer.allocate(nbTriangle * 3 * 2);
+    	mesh.mVertices = FloatBuffer.allocate(nbTriangle * Sd3dMesh.nbFloatPerVertex * 3);
+    	//mesh.mTexCoords = FloatBuffer.allocate(nbTriangle * 3 * 2);
     	
     	mesh.putTexturedQuad(x, y, z, x+size, y, z, x+size, y+size, z,  x, y+size, z,0f,0f,1f,0f,1f,1f,0f,1f);
     	//mesh.putTexturedQuad(x, y+size, z, x+size, y+size, z, x+size, y, z,  x, y, z,0f,0f,1f,0f,1f,1f,0f,1f);
     	
     	mesh.mIndices.position(0);
     	mesh.mVertices.position(0);
-    	mesh.mTexCoords.position(0);
+    	//mesh.mTexCoords.position(0);
     	
     	mesh.mIsInScreenSpace = true;
     	
@@ -100,12 +102,15 @@ public class Sd3dLensFlareEntity extends Sd3dGameEntity {
 	{	
 		if (mRenderer.pointInFrustum(100.f+mCamera.getPosition()[0], -20.f, 100.f+mCamera.getPosition()[2]))
 		{
+			
 			this.hasObject = true;
 			this.mScreenCenter.set(this.mRenderer.getScreenWidth()*0.5f, this.mRenderer.getScreenHeight()*0.5f);
+			
 			this.mRenderer.pointToScreen(100.f+mCamera.getPosition()[0], -30.f, 100.f+mCamera.getPosition()[2],lightpos);
 			
 			//Log.d("LENS FLARE","LIGHT POSITION="+lightpos[0]+" "+lightpos[1]);
 			//this.mLightPosition.set(600, 150);
+			
 			
 			this.mLightPosition.set(lightpos[0], lightpos[1]);
 			this.mToFlare.set(this.mLightPosition.getX(), this.mLightPosition.getY());
@@ -121,6 +126,7 @@ public class Sd3dLensFlareEntity extends Sd3dGameEntity {
 				this.mObject.mMesh[i].mMeshPosition[0] = mVector.getX();
 				this.mObject.mMesh[i].mMeshPosition[1] = mVector.getY();
 			}
+			
 		}
 		else
 		{

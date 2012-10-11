@@ -55,7 +55,7 @@ public class EglHelper {
         * Create an OpenGL ES context. This must be done only once, an
         * OpenGL context is a somewhat heavy object.
         */
-        final ActivityManager activityManager = Sd3dRessourceManager.Manager.getActivityManager();
+        final ActivityManager activityManager = Sd3dRessourceManager.getManager().getActivityManager();
         
         //final ActivityManager activityManager = (ActivityManager) Context.getSystemService(Context.ACTIVITY_SERVICE);
         final ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();

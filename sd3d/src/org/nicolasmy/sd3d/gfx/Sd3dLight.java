@@ -2,6 +2,8 @@ package org.nicolasmy.sd3d.gfx;
 
 import java.nio.FloatBuffer;
 
+import org.nicolasmy.sd3d.math.Sd3dVector;
+
 public class Sd3dLight {
 	public static void computeLighting(Sd3dVector vlight,Sd3dMesh mesh,Sd3dMaterial material)
 	{
@@ -20,7 +22,7 @@ public class Sd3dLight {
 			b = mesh.mIndices.get(i*3+1);
 			c = mesh.mIndices.get(i*3+2);
 			
-			normal.set(mesh.mNormals, a);
+			normal.setFromNormal(mesh.mVertices, a);
 			
 			res = Sd3dVector.dot(vlight, normal);
 			

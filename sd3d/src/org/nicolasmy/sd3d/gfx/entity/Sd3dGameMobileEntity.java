@@ -6,7 +6,7 @@ import org.nicolasmy.sd3d.gfx.Sd3dLight;
 import org.nicolasmy.sd3d.gfx.Sd3dMaterial;
 import org.nicolasmy.sd3d.gfx.Sd3dMesh;
 import org.nicolasmy.sd3d.gfx.Sd3dObject;
-import org.nicolasmy.sd3d.gfx.Sd3dVector;
+import org.nicolasmy.sd3d.math.Sd3dVector;
 
 import android.util.Log;
 

@@ -52,15 +52,15 @@ public class Sd3dCloudsEntity extends Sd3dGameEntity{
   {
     float f = size / 2.f;
     int nbTriangle = 2;
-    mesh.mVertices = FloatBuffer.allocate(nbTriangle * 3 * 3);
+    mesh.mVertices = FloatBuffer.allocate(nbTriangle * Sd3dMesh.nbFloatPerVertex * 3);
     mesh.mIndices = CharBuffer.allocate(nbTriangle*3);
-    mesh.mTexCoords = FloatBuffer.allocate(nbTriangle * 3 * 2);
+    //mesh.mTexCoords = FloatBuffer.allocate(nbTriangle * 3 * 2);
     //mesh.putTexturedQuad(-f,0,f,f,0,f,f,0,-f,-f,0,-f,0f,0f,1f,0f,1f,1f,0f,1f);
 
     mesh.putTexturedQuad(-f,0,-f,f,0,-f,f,0,f,-f,0,f,0f,0f,1f,0f,1f,1f,0f,1f);
     mesh.mVertices.position(0);
     mesh.mIndices.position(0);		
-    mesh.mTexCoords.position(0);
+    //mesh.mTexCoords.position(0);
 
     mesh.mMeshPosition = new float[3];
     mesh.mMeshPosition[0] = x;

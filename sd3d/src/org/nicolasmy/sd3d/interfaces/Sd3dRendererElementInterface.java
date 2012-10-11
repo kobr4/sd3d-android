@@ -5,12 +5,12 @@ import java.nio.IntBuffer;
 
 public interface Sd3dRendererElementInterface {
 
-	public abstract void register();
+	public void register();
 
-	public abstract void unregister();
+	public void unregister();
 
-	public abstract void prerender(FloatBuffer camPosVector,float[] mVMatrix,float[] mVPMatrix,float[] projectionMatrix, float[] normalMatrix,IntBuffer renderStateVector);
+	public void prerender(FloatBuffer camPosVector,float[] mVMatrix,float[] mVPMatrix,float[] projectionMatrix, float[] normalMatrix,IntBuffer renderStateVector);
 	
-	public abstract void postrender();
+	public void postrender();
 
 }

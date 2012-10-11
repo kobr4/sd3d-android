@@ -15,16 +15,22 @@ import java.util.HashMap;
 
 import org.nicolasmy.sd3d.MeshSerializationBean;
 import org.nicolasmy.sd3d.interfaces.Sd3dRendererElementInterface;
+import org.nicolasmy.sd3d.math.Sd3dMatrix;
+import org.nicolasmy.sd3d.math.Sd3dVector;
 
 import android.util.Log;
 
 public class Sd3dMesh
 {
 	public static HashMap<String, Object> meshCache = new HashMap<String,Object>();
+	public final static int nbFloatPerVertex = 3 + 3 + 2;
 	public FloatBuffer mVertices;
-	public FloatBuffer mNormals;
+	//public FloatBuffer mNormals;
 	public CharBuffer mIndices;
-	public FloatBuffer mTexCoords;
+	//public FloatBuffer mTexCoords;
+	
+	public boolean mHasNormals;
+	public boolean mHasTexCoords;
 	public String mMeshName;
 	public float mMeshPosition[]; 
 	public boolean mIsBillboard;
@@ -41,11 +47,49 @@ public class Sd3dMesh
 	
 	public void init(int trianglecount)
 	{
-		mVertices = FloatBuffer.allocate(trianglecount * 3 * 3);
+		mVertices = FloatBuffer.allocate(trianglecount * Sd3dMesh.nbFloatPerVertex * 3);
 		mIndices = CharBuffer.allocate(trianglecount * 3);
 	}
 		
-
+	public void init(float vertices[],float normals[], float texcoords[],char indices[])
+	{
+		int nbVertex = vertices.length / 3;
+	    mVertices = FloatBuffer.allocate(nbVertex * Sd3dMesh.nbFloatPerVertex);
+		//mVertices.put(vertices);
+		
+		for (int i = 0;i < nbVertex;i++)
+		{
+			float px = vertices[i*3]; 
+			float py = vertices[i*3 + 1]; 
+			float pz = vertices[i*3 + 2]; 
+			float nx = 0f;
+			float ny = 0f;
+			float nz = 0f;
+			if (normals != null)
+			{
+				nx = normals[i*3]; 
+				ny = normals[i*3 + 1]; 
+				nz = normals[i*3 + 2]; 
+			}
+			float tx = 0f;
+			float ty = 0f;			
+			if (texcoords != null)
+			{
+				tx = texcoords[i*2]; 
+				ty = texcoords[i*2 + 1]; 
+			}	
+			
+			this.addPoint(px, py, pz, nx, ny, nz, tx, ty);
+		}
+		
+		mVertices.position(0);		
+		
+		mIndices = CharBuffer.allocate(indices.length);
+		mIndices.put(indices);
+		mIndices.position(0);	
+		
+	
+	}
 	
 	public void writeToFile(String filename)
 	{
@@ -63,7 +107,7 @@ public class Sd3dMesh
 		bean.setIndices(indices);		
 		this.mVertices.position(0);
 		this.mIndices.position(0);	
-		
+		/*
 		if (this.mNormals != null)
 		{
 			this.mNormals.position(0);
@@ -72,7 +116,7 @@ public class Sd3dMesh
 			bean.setNormals(normals);
 			this.mNormals.position(0);
 		}
-		
+		*/
 		bean.setMeshPostion(this.mMeshPosition);
 		
 		FileOutputStream fos;
@@ -108,7 +152,7 @@ public class Sd3dMesh
 		try {
 			//FileInputStream fis = new FileInputStream(filename);
 			//ObjectInputStream ois = new ObjectInputStream(fis);
-		  ObjectInputStream ois = new ObjectInputStream(Sd3dRessourceManager.Manager.getRessource(filename));
+		  ObjectInputStream ois = new ObjectInputStream(Sd3dRessourceManager.getManager().getRessource(filename));
 		  try {
 		    bean = (MeshSerializationBean)ois.readObject();
 			ois.close();
@@ -120,7 +164,7 @@ public class Sd3dMesh
 	        vbb.order(ByteOrder.nativeOrder());
 	        FloatBuffer	mFVertexBuffer = vbb.asFloatBuffer();			
 	        mFVertexBuffer.put(bean.getVertices());
-			
+			/*
 	        if (bean.getNormals() != null)
 	        {
 		        ByteBuffer nbb = ByteBuffer.allocateDirect(bean.getNormals().length * 4);
@@ -130,7 +174,7 @@ public class Sd3dMesh
 		        this.mNormals = normalBuffer;
 		        this.mNormals.position(0);
 	        }
-	        
+	        */
 	        this.mMeshPosition = bean.getMeshPostion();
 	        
 	        //this.mVertices = FloatBuffer.wrap(bean.getVertices());
@@ -188,9 +232,9 @@ public class Sd3dMesh
 			char b = (char) (mIndices.get(i+1));
 			char c = (char) (mIndices.get(i+2));
 			
-			v0.set(mVertices, a);
-			v1.set(mVertices, b);
-			v2.set(mVertices, c);
+			v0.setFromVertice(mVertices, a);
+			v1.setFromVertice(mVertices, b);
+			v2.setFromVertice(mVertices, c);
 			
 			Sd3dVector.sub(vm1, v1, v0);
 			Sd3dVector.sub(vm2, v2, v0);
@@ -284,9 +328,9 @@ public class Sd3dMesh
 			char b = (char) (mIndices.get(i+1));
 			char c = (char) (mIndices.get(i+2));
 			
-			v0.set(mVertices, a);
-			v1.set(mVertices, b);
-			v2.set(mVertices, c);
+			v0.setFromVertice(mVertices, a);
+			v1.setFromVertice(mVertices, b);
+			v2.setFromVertice(mVertices, c);
 			
 			Sd3dVector.sub(vm1, v1, v0);
 			Sd3dVector.sub(vm2, v2, v0);
@@ -305,9 +349,9 @@ public class Sd3dMesh
 			else
 			{
 				
-				shadowMesh.putTriangle(mVertices.get(a*3), mVertices.get(a*3+1), mVertices.get(a*3+2), 
-						mVertices.get(b*3), mVertices.get(b*3+1), mVertices.get(b*3+2), 
-						mVertices.get(c*3), mVertices.get(c*3+1), mVertices.get(c*3+2));
+				shadowMesh.putTriangle(mVertices.get(a*nbFloatPerVertex), mVertices.get(a*nbFloatPerVertex+1), mVertices.get(a*nbFloatPerVertex+2), 
+						mVertices.get(b*nbFloatPerVertex), mVertices.get(b*nbFloatPerVertex+1), mVertices.get(b*nbFloatPerVertex+2), 
+						mVertices.get(c*nbFloatPerVertex), mVertices.get(c*nbFloatPerVertex+1), mVertices.get(c*nbFloatPerVertex+2));
 				
 				//trianglecount++;
 			}
@@ -339,22 +383,22 @@ public class Sd3dMesh
 																		
 									
 									Sd3dVector vt1 = new Sd3dVector();
-									vt1.set(mVertices, a2);
+									vt1.setFromVertice(mVertices, a2);
 									Sd3dVector vt1p = new Sd3dVector();
 									Sd3dVector.sub(vt1p,vt1,lightVectP);
 
 									Sd3dVector vt2 = new Sd3dVector();
-									vt2.set(mVertices, b2);
+									vt2.setFromVertice(mVertices, b2);
 									Sd3dVector vt2p = new Sd3dVector();
 									Sd3dVector.sub(vt2p,vt2,lightVectP);									
 									
-									shadowMesh.putTriangle(mVertices.get(a*3), mVertices.get(a*3+1), mVertices.get(a*3+2), 
-											mVertices.get(b*3), mVertices.get(b*3+1), mVertices.get(b*3+2), 
+									shadowMesh.putTriangle(mVertices.get(a*nbFloatPerVertex), mVertices.get(a*nbFloatPerVertex+1), mVertices.get(a*nbFloatPerVertex+2), 
+											mVertices.get(b*nbFloatPerVertex), mVertices.get(b*nbFloatPerVertex+1), mVertices.get(b*nbFloatPerVertex+2), 
 											vt2p.get(0), vt2p.get(1), vt2p.get(2));									
 		
 									shadowMesh.putTriangle( vt2p.get(0), vt2p.get(1), vt2p.get(2),
 											vt1p.get(0), vt1p.get(1), vt1p.get(2),
-											mVertices.get(a*3), mVertices.get(a*3+1), mVertices.get(a*3+2));										
+											mVertices.get(a*nbFloatPerVertex), mVertices.get(a*nbFloatPerVertex+1), mVertices.get(a*nbFloatPerVertex+2));										
 									
 								
 								}
@@ -398,6 +442,21 @@ public class Sd3dMesh
 		
 	}
 	
+	private void addPoint(float px,float py,float pz,float nx,float ny,float nz,float tx,float ty)
+	{
+		mVertices.put(px);
+		mVertices.put(py);
+		mVertices.put(pz);
+		mVertices.put(nx);
+		mVertices.put(ny);
+		mVertices.put(nz);
+		mVertices.put(tx);
+		mVertices.put(ty);
+		
+		
+	}
+	
+	
 	public void putTexturedQuad(float x1,float y1,float z1,
 			float x2,float y2,float z2,
 			float x3,float y3,float z3,
@@ -407,6 +466,23 @@ public class Sd3dMesh
 			float x3t,float y3t,
 			float x4t,float y4t)
 	{
+		int indice = mVertices.position()/Sd3dMesh.nbFloatPerVertex;
+		
+		addPoint(x1,y1,z1,0f,0f,0f,x1t,y1t);
+		addPoint(x2,y2,z2,0f,0f,0f,x2t,y2t);
+		addPoint(x3,y3,z3,0f,0f,0f,x3t,y3t);
+		addPoint(x4,y4,z4,0f,0f,0f,x4t,y4t);
+		
+		mIndices.put((char)indice);
+		mIndices.put((char)(indice+1));
+		mIndices.put((char)(indice+2));		
+		
+		
+		mIndices.put((char)(indice+2));
+		mIndices.put((char)(indice+3));
+		mIndices.put((char)indice);		
+		
+		/*
 		putQuad(x1,y1,z1,x2,y2,z2,
 				x3,y3,z3,x4,y4,z4);		
 		
@@ -428,29 +504,66 @@ public class Sd3dMesh
 		*/
 	}
 	
+	public void addTexCoords(int indice,float xt,float yt)
+	{
+		mVertices.put(indice * Sd3dMesh.nbFloatPerVertex + 6,xt);
+		mVertices.put(indice * Sd3dMesh.nbFloatPerVertex + 7,yt);
+	}
+	
+	public void addNormal(int indice,float nx,float ny,float nz)
+	{
+		mVertices.put(indice * Sd3dMesh.nbFloatPerVertex + 3,nx);
+		mVertices.put(indice * Sd3dMesh.nbFloatPerVertex + 4,ny);
+		mVertices.put(indice * Sd3dMesh.nbFloatPerVertex + 5,nz);
+	}	
+	
+	public float getNormal(int indice, int element)
+	{
+		return mVertices.get(indice * Sd3dMesh.nbFloatPerVertex + 3 + element);
+	}
+	
 	
 	public void putTriangle(float x1,float y1,float z1,
 			float x2,float y2,float z2,
 			float x3,float y3,float z3)
 	{
-		int indice = mVertices.position()/3;
+		int indice = mVertices.position()/Sd3dMesh.nbFloatPerVertex;
 		mVertices.put(x1);
 		mVertices.put(y1);
 		mVertices.put(z1);
+		
+		mVertices.put(0f);
+		mVertices.put(0f);
+		mVertices.put(0f);
+		mVertices.put(0f);
+		mVertices.put(0f);
 		
 		mVertices.put(x2);
 		mVertices.put(y2);
 		mVertices.put(z2);
 		
+		mVertices.put(0f);
+		mVertices.put(0f);
+		mVertices.put(0f);
+		mVertices.put(0f);
+		mVertices.put(0f);		
+		
 		mVertices.put(x3);
 		mVertices.put(y3);
 		mVertices.put(z3);		
+		
+		mVertices.put(0f);
+		mVertices.put(0f);
+		mVertices.put(0f);
+		mVertices.put(0f);
+		mVertices.put(0f);		
 		
 		mIndices.put((char)indice);
 		mIndices.put((char)(indice+1));
 		mIndices.put((char)(indice+2));		
 	}
 	
+	/*
 	public void putQuad(float x1,float y1,float z1,
 			float x2,float y2,float z2,
 			float x3,float y3,float z3,
@@ -484,18 +597,14 @@ public class Sd3dMesh
 		mIndices.put((char)(indice+1));
 		mIndices.put((char)(indice+2));		
 		
-/*
-		mIndices.put((char)(indice+2));			
-		mIndices.put((char)(indice+1));
-		mIndices.put((char)indice);		
-	*/	
 		
 		mIndices.put((char)(indice+2));
 		mIndices.put((char)(indice+3));
 		mIndices.put((char)indice);
 				
 	}	
-	
+	*/
+
 	public void setMeshPosition(float x,float y,float z)
 	{
 		if (mMeshPosition == null)
@@ -544,10 +653,12 @@ public class Sd3dMesh
 	    return hex.toString();
 	  }		
 	private int currentcount;
+	
+    private float buffVerts[] = null;
+    private char indices[] = null;
+    private float texCoords[] = null;
 	private int eatChunk(byte buffer[],int offset, int count,float angle_y,float z_adjust,float scale)
 	{
-		//float scale = 0.004f;
-		//float scale = 0.4f;
 		int chunkid;
 		int chunklength;
 	    int     i = 0;// index into current chunk
@@ -556,23 +667,19 @@ public class Sd3dMesh
 	    byte buf[] = new byte[2];
 	    buf[0] = buffer[i+offset];
 	    buf[1] = buffer[i+offset+1];		    
-	    //String sChunkid = getHex(buf);
 	    chunklength = read32(buffer,i+2+offset);
 	    i = 6;
 	    
 	    float tmpV[] = new float[3];
 	    float tmpRes[] = new float[3];	    
-	    
-	    //Sd3dMatrix m = Sd3dMatrix.getRotationMatrix(-90,0,0);
+	    ;
 	    Sd3dMatrix m = Sd3dMatrix.getRotationMatrix(-90,angle_y,0);
 
 		float v1[] = new float[4];
 		float v2[] = new float[4];
 	    
 	    int numVerts = 0;
-	    float buffVerts[];
-	    char indices[] = null;
-	    float texCoords[] = null;
+
 	    
 	    switch (chunkid)
 	    {
@@ -636,18 +743,21 @@ public class Sd3dMesh
 	            }
 	            
 	            
-		        ByteBuffer vbb = ByteBuffer.allocateDirect(numVerts*3 * 4);
-		        vbb.order(ByteOrder.nativeOrder());
-		        FloatBuffer	mFVertexBuffer = vbb.asFloatBuffer();			
-		        mFVertexBuffer.put(buffVerts);	      
-		        mVertices =  mFVertexBuffer;
-	            /*
+		        //ByteBuffer vbb = ByteBuffer.allocateDirect(numVerts*3 * 4);
+		        //vbb.order(ByteOrder.nativeOrder());
+		        
+		        //FloatBuffer	mFVertexBuffer = vbb.asFloatBuffer();			
+		        //mFVertexBuffer.put(buffVerts);	      
+		        //mVertices =  mFVertexBuffer;
+	            
+		        /*
 	            mVertices = FloatBuffer.allocate(numVerts*3);
 				mVertices.put(buffVerts);
 				mVertices.position(0);		
 	            *
 	            */
-				System.out.println("NumVertices: "+mVertices.capacity());				
+				//System.out.println("NumVertices: "+mVertices.capacity());		
+
 	        }
 	        else
 	        {
@@ -674,18 +784,21 @@ public class Sd3dMesh
 	                i+=2;   // skip face info
 	            }
 	            
-	            
-		        ByteBuffer vbb = ByteBuffer.allocateDirect(numpolys*3*2);
-		        vbb.order(ByteOrder.nativeOrder());
-		        CharBuffer	charBuffer = vbb.asCharBuffer();			
-		        charBuffer.put(indices);	  	            
-		        mIndices = charBuffer;
+	            this.init(buffVerts, null, texCoords, indices);
+		        //ByteBuffer vbb = ByteBuffer.allocateDirect(numpolys*3*2);
+		        //vbb.order(ByteOrder.nativeOrder());
+		        
+		        
+		        
+		        //CharBuffer	charBuffer = vbb.asCharBuffer();			
+		        //charBuffer.put(indices);	  	            
+		        //mIndices = charBuffer;
 		        /*
 				mIndices = CharBuffer.allocate(numpolys*3);
 				//System.out.println("Indices: "+mIndices.capacity()/3);
 				mIndices.put(indices);
 				*/
-				mIndices.position(0);			            
+				//mIndices.position(0);			            
 	        }
 	        else
 	            i = chunklength;
@@ -701,21 +814,21 @@ public class Sd3dMesh
 	            for (j=0;j<numuvmaps;j++)
 	            {
 	            	texCoords[j*2] = Float.intBitsToFloat(read32(buffer,i+offset));
+	            	//float xt = Float.intBitsToFloat(read32(buffer,i+offset));
 	            	
-	            	//texCoords[j] = 0.F;
-	            	//System.out.print(texCoords[j]+"-");
 	                i+=4;
 	                texCoords[j*2+1]  = 1.f - Float.intBitsToFloat(read32(buffer,i+offset));
-	                
-	                //texCoords[j+1] = 1.F;
-	                //System.out.println(texCoords[j+1]);
+	                //float yt = 1.f - Float.intBitsToFloat(read32(buffer,i+offset));
 	                i+=4;
+	                //this.addTexCoords(j, xt, yt);
 	            } 
+	            /*
 				mTexCoords = FloatBuffer.allocate(numuvmaps*2);
 				mTexCoords.put(texCoords);
 				mTexCoords.position(0);	
 				
 				System.out.println("TexCoords: "+mTexCoords.capacity());
+				*/
 	    	}
 	    	
 	        i = chunklength;
@@ -751,7 +864,7 @@ public class Sd3dMesh
 		Log.d("Sd3dMesh","Loading : "+filename);
 		if (meshCache.get(filename+(""+angle_y)+count) == null)
 		{
-			InputStream is = Sd3dRessourceManager.Manager.getRessource(filename);
+			InputStream is = Sd3dRessourceManager.getManager().getRessource(filename);
 			byte buffer[] = new byte[is.available()];			
 			is.read(buffer);			
 			/*
@@ -780,7 +893,7 @@ public class Sd3dMesh
 	public void copyReference(Sd3dMesh mesh)
 	{
 		mIndices = mesh.mIndices;
-		mTexCoords = mesh.mTexCoords;
+		//mTexCoords = mesh.mTexCoords;
 		mVertices = mesh.mVertices;
 		mMeshPosition = mesh.mMeshPosition;
 		
@@ -818,27 +931,27 @@ public class Sd3dMesh
 	public void copy(Sd3dMesh mesh)
 	{
 		mIndices = CharBuffer.allocate(mesh.mIndices.position());
-		mTexCoords = FloatBuffer.allocate(mesh.mTexCoords.position());
+		//mTexCoords = FloatBuffer.allocate(mesh.mTexCoords.position());
 		mVertices = FloatBuffer.allocate(mesh.mVertices.position());
 		
 		for (int j = 0; j < mIndices.capacity();j++)
 			mIndices.put(mesh.mIndices.get(j));
 		
-		for (int j = 0; j < mTexCoords.capacity();j++)
-			mTexCoords.put(mesh.mTexCoords.get(j));	
+		//for (int j = 0; j < mTexCoords.capacity();j++)
+		//	mTexCoords.put(mesh.mTexCoords.get(j));	
 		
 		for (int j = 0; j < mVertices.capacity();j++)
 			mVertices.put(mesh.mVertices.get(j));
 		
 		mIndices.position(0);
-		mTexCoords.position(0);
+		//mTexCoords.position(0);
 		mVertices.position(0);
 	}
 	
 	public void init(int triangleCount,int verticeCount)
 	{
 		mIndices = CharBuffer.allocate(triangleCount*3);
-		mTexCoords = FloatBuffer.allocate(verticeCount*2);
+		//mTexCoords = FloatBuffer.allocate(verticeCount*2);
 		mVertices = FloatBuffer.allocate(verticeCount*3);		
 	}
 	
@@ -854,7 +967,7 @@ public class Sd3dMesh
 		int trianglecount = this.mIndices.capacity()/3;
 		FloatBuffer normals = FloatBuffer.allocate(trianglecount*3);
 
-		this.mNormals = FloatBuffer.allocate(this.mVertices.capacity());		
+		//this.mNormals = FloatBuffer.allocate(this.mVertices.capacity());		
 		
 		this.mIndices.position(0);
 		for (int i = 0;i < trianglecount;i++)
@@ -864,9 +977,9 @@ public class Sd3dMesh
 			b = this.mIndices.get();
 			c = this.mIndices.get();
 			
-			v0.set(this.mVertices,a);
-			v1.set(this.mVertices,b);
-			v2.set(this.mVertices,c);
+			v0.setFromVertice(this.mVertices,a);
+			v1.setFromVertice(this.mVertices,b);
+			v2.setFromVertice(this.mVertices,c);
 			
 			Sd3dVector.sub(vm1, v1, v0);
 			Sd3dVector.sub(vm2, v2, v0);
@@ -877,6 +990,8 @@ public class Sd3dMesh
 			normals.put(res.get(0));
 			normals.put(res.get(1));
 			normals.put(res.get(2));
+			
+			
 					
 		}
 		
@@ -889,10 +1004,12 @@ public class Sd3dMesh
 			yv = this.mVertices.get(i*3+1);
 			zv = this.mVertices.get(i*3+2);				
 			
+			/*
 			this.mNormals.put(i*3,0f);
 			this.mNormals.put(i*3+1,0f);			
 			this.mNormals.put(i*3+2,0f);
-			
+			*/
+			addNormal(i, 0f, 0f, 0f);
 			for (int k = 0;k < trianglecount;k++)
 			{
 				int a,b,c;
@@ -915,9 +1032,13 @@ public class Sd3dMesh
 				
 					
 					count++;
+					/*
 					this.mNormals.put(i*3,xnormal+this.mNormals.get(i*3));
 					this.mNormals.put(i*3+1,ynormal+this.mNormals.get(i*3+1));
-					this.mNormals.put(i*3+2,znormal+this.mNormals.get(i*3+2));					
+					this.mNormals.put(i*3+2,znormal+this.mNormals.get(i*3+2));
+					*/	
+					this.addNormal(i,xnormal+getNormal(i,0),ynormal+getNormal(i,1),znormal+getNormal(i,2));
+					
 				}
 				
 				x = this.mVertices.get(b*3);
@@ -928,9 +1049,7 @@ public class Sd3dMesh
 				{			
 					
 					count++;
-					this.mNormals.put(i*3,xnormal+this.mNormals.get(i*3));
-					this.mNormals.put(i*3+1,ynormal+this.mNormals.get(i*3+1));
-					this.mNormals.put(i*3+2,znormal+this.mNormals.get(i*3+2));				
+					this.addNormal(i,xnormal+getNormal(i,0),ynormal+getNormal(i,1),znormal+getNormal(i,2));				
 				}
 				
 				x = this.mVertices.get(c*3);
@@ -941,18 +1060,20 @@ public class Sd3dMesh
 				{				
 					
 					count++;
-					this.mNormals.put(i*3,xnormal+this.mNormals.get(i*3));
-					this.mNormals.put(i*3+1,ynormal+this.mNormals.get(i*3+1));
-					this.mNormals.put(i*3+2,znormal+this.mNormals.get(i*3+2));				
+					//this.mNormals.put(i*3,xnormal+this.mNormals.get(i*3));
+					//this.mNormals.put(i*3+1,ynormal+this.mNormals.get(i*3+1));
+					//this.mNormals.put(i*3+2,znormal+this.mNormals.get(i*3+2));	
+					this.addNormal(i,xnormal+getNormal(i,0),ynormal+getNormal(i,1),znormal+getNormal(i,2));
 				}				
 			}
 			
 			if (count > 0)
 			{
 				//System.out.println("count="+count);
-				this.mNormals.put(i*3,this.mNormals.get(i*3)/count);
-				this.mNormals.put(i*3+1,this.mNormals.get(i*3+1)/count);			
-				this.mNormals.put(i*3+2,this.mNormals.get(i*3+2)/count);			
+				//this.mNormals.put(i*3,this.mNormals.get(i*3)/count);
+				//this.mNormals.put(i*3+1,this.mNormals.get(i*3+1)/count);			
+				//this.mNormals.put(i*3+2,this.mNormals.get(i*3+2)/count);	
+				this.addNormal(i,getNormal(i,0)/count,getNormal(i,1)/count,getNormal(i,2)/count);
 			}// else 				System.out.println("count="+count);
 			
 		}
@@ -960,7 +1081,7 @@ public class Sd3dMesh
 		
 		
 		this.mIndices.position(0);
-		this.mNormals.position(0);
+		//this.mNormals.position(0);
 		this.mVertices.position(0);
 	}	
 	
@@ -974,7 +1095,7 @@ public class Sd3dMesh
 		Sd3dVector v2 = new Sd3dVector();
 		
 		int trianglecount = this.mIndices.capacity()/3;
-		this.mNormals = FloatBuffer.allocate(this.mVertices.capacity());
+		//this.mNormals = FloatBuffer.allocate(this.mVertices.capacity());
 		
 		this.mIndices.position(0);
 		for (int i = 0;i < trianglecount;i++)
@@ -984,20 +1105,17 @@ public class Sd3dMesh
 			b = this.mIndices.get();
 			c = this.mIndices.get();
 			
-			v0.set(this.mVertices,a);
-			v1.set(this.mVertices,b);
-			v2.set(this.mVertices,c);
+			v0.setFromVertice(this.mVertices,a);
+			v1.setFromVertice(this.mVertices,b);
+			v2.setFromVertice(this.mVertices,c);
 			
 			Sd3dVector.sub(vm1, v1, v0);
 			Sd3dVector.sub(vm2, v2, v0);
 			Sd3dVector.cross(res, vm1, vm2);
 			
 			res.normalize();
+
 			/*
-			res.set(0, 1.f);
-			res.set(1, 0.f);
-			res.set(2, 0.f);
-			*/
 			this.mNormals.put(a*3,this.mNormals.get(a*3)+res.get(0)/3.f);
 			this.mNormals.put(a*3+1,this.mNormals.get(a*3+1)+res.get(1)/3.f);
 			this.mNormals.put(a*3+2,this.mNormals.get(a*3+2)+res.get(2)/3.f);
@@ -1008,11 +1126,22 @@ public class Sd3dMesh
 			
 			this.mNormals.put(c*3,this.mNormals.get(c*3)+res.get(0)/3.f);
 			this.mNormals.put(c*3+1,this.mNormals.get(c*3+1)+res.get(1)/3.f);
-			this.mNormals.put(c*3+2,this.mNormals.get(c*3+2)+res.get(2)/3.f);			
-					}
+			this.mNormals.put(c*3+2,this.mNormals.get(c*3+2)+res.get(2)/3.f);	
+			*/
+			/*
+			this.addNormal(a,res.get(0),res.get(1),res.get(2));
+			this.addNormal(b,res.get(0),res.get(1),res.get(2));
+			this.addNormal(c,res.get(0),res.get(1),res.get(2));		
+			*/	
+			
+			this.addNormal(a,getNormal(a,0)+res.get(0)/3.f,getNormal(a,1)+res.get(1)/3.f,getNormal(a,2)+res.get(2)/3.f);
+			this.addNormal(b,getNormal(b,0)+res.get(0)/3.f,getNormal(b,1)+res.get(1)/3.f,getNormal(b,2)+res.get(2)/3.f);
+			this.addNormal(c,getNormal(c,0)+res.get(0)/3.f,getNormal(c,1)+res.get(1)/3.f,getNormal(c,2)+res.get(2)/3.f);			
+			
+		}
 		
 		this.mIndices.position(0);
-		this.mNormals.position(0);
+		//this.mNormals.position(0);
 		this.mVertices.position(0);
 	}
 }

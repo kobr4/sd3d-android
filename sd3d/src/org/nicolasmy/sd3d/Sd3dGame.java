@@ -8,12 +8,8 @@ import javax.microedition.khronos.opengles.GL11;
 import org.nicolasmy.sd3d.Sd3dGLSurfaceView;
 import org.nicolasmy.sd3d.gfx.Sd3dLensFlareEntity;
 import org.nicolasmy.sd3d.gfx.Sd3dObject;
-import org.nicolasmy.sd3d.gfx.Sd3dRendererGl20;
-import org.nicolasmy.sd3d.gfx.Sd3dRenderer;
-import org.nicolasmy.sd3d.gfx.Sd3dRendererInterface;
 import org.nicolasmy.sd3d.gfx.Sd3dRessourceManager;
 import org.nicolasmy.sd3d.gfx.Sd3dScene;
-import org.nicolasmy.sd3d.gfx.Sd3dVector2d;
 import org.nicolasmy.sd3d.gfx.entity.Sd3dCloudsEntity;
 import org.nicolasmy.sd3d.gfx.entity.Sd3dGameChaseCameraEntity;
 import org.nicolasmy.sd3d.gfx.entity.Sd3dGameCameraEntity;
@@ -23,8 +19,12 @@ import org.nicolasmy.sd3d.gfx.entity.Sd3dGameMobileEntity;
 import org.nicolasmy.sd3d.gfx.entity.Sd3dGameSkyBoxEntity;
 import org.nicolasmy.sd3d.gfx.entity.Sd3dGameSkyBoxEntityPerFace;
 import org.nicolasmy.sd3d.gfx.entity.Sd3dPlaneEntity;
+import org.nicolasmy.sd3d.gfx.renderer.Sd3dRenderer;
+import org.nicolasmy.sd3d.gfx.renderer.Sd3dRendererGl20;
+import org.nicolasmy.sd3d.gfx.renderer.Sd3dRendererInterface;
 import org.nicolasmy.sd3d.interfaces.Sd3dCollisionAgainstInterface;
 import org.nicolasmy.sd3d.interfaces.Sd3dFrameProcessorInterface;
+import org.nicolasmy.sd3d.math.Sd3dVector2d;
 
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -63,11 +63,12 @@ public class Sd3dGame
 	private ArrayList<Sd3dFrameProcessorInterface> mArray = new ArrayList<Sd3dFrameProcessorInterface>();
 	public class Sd3dInputEvent
 	{
-		boolean isActive;
-		Sd3dInputEventType mType;
+		public boolean isActive;
+		public Sd3dInputEventType mType;
 		public int key;
-		SensorEvent mEvent;
-		MotionEvent mTouchEvent;
+		public SensorEvent mEvent;
+		public MotionEvent mTouchEvent;
+		public int deviceRotation;
 	}
 	
 	public void addFrameProcessor(Sd3dFrameProcessorInterface processor)
@@ -182,7 +183,9 @@ public class Sd3dGame
 						{
 							if (mEntityList[i].isReceiveInput())
 							{
-								mEntityList[i].onAccelerometerEvent(mAccelEvent.mEvent);
+								
+								
+								mEntityList[i].onAccelerometerEvent(mAccelEvent);
 							}
 						}						
 					}
@@ -268,7 +271,8 @@ public class Sd3dGame
 	public void updateRenderer(Activity activity)
 	{
         DisplayMetrics dm = new DisplayMetrics();
-        activity.getWindowManager().getDefaultDisplay().getMetrics(dm);				
+        activity.getWindowManager().getDefaultDisplay().getMetrics(dm);	
+        mDeviceRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
 		this.mRenderer.updateScreenResolution(dm.widthPixels,dm.heightPixels);
 		screenWidth = dm.widthPixels;
 		screenHeight = dm.heightPixels;
@@ -290,8 +294,9 @@ public class Sd3dGame
 		Log.d("Sd3dGame","init()");
         DisplayMetrics dm = new DisplayMetrics();
         activity.getWindowManager().getDefaultDisplay().getMetrics(dm);		
-        //
-		
+     
+        activity.getWindowManager().getDefaultDisplay().getMetrics(dm);	
+        mDeviceRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
 		
 		this.mScene = new Sd3dScene(mMaxScene);
 		//this.mRenderer = new Sd3dRenderer(true,mMaxScene,dm.widthPixels,dm.heightPixels);
@@ -325,6 +330,7 @@ public class Sd3dGame
 	public int mPickCount = 0;
 	public int mPickX;
 	public int mPickY;	
+	public int mDeviceRotation;
 	//public boolean mToto = false;
 	private boolean mShowFps = false;
 	
@@ -374,10 +380,9 @@ public class Sd3dGame
 			processor.processFrame();
 		}
 
-		{
-			mRenderer.renderScene(mScene);	
-			mRenderer.renderShadowVolumeScene(mScene);
-		}
+
+		mRenderer.renderScene(mScene);	
+		
 		
 		//mAccelEvent = null;
 		//mTouchEvent = null;
@@ -388,7 +393,7 @@ public class Sd3dGame
 	{
 		//mRenderer.mGl = gl;
 		mRenderer.setGL11Context(gl);
-		mRenderer.renderPickableScene(mScene);	
+		//mRenderer.renderPickableScene(mScene);	
 	}
 	
 	public void processPrePicking(GL11 gl)
@@ -434,6 +439,7 @@ public class Sd3dGame
     			mAccelEvent.mEvent = event;
     			mAccelEvent.mType = Sd3dInputEventType.ACCELEROMETER;
     			mAccelEvent.isActive = true;
+    			mAccelEvent.deviceRotation = this.mDeviceRotation;
     		}
     	}		
 	}	

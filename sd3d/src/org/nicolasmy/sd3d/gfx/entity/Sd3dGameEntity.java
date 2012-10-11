@@ -6,7 +6,6 @@ import org.nicolasmy.sd3d.gfx.Sd3dObject;
 import org.nicolasmy.sd3d.Sd3dGame;
 import org.nicolasmy.sd3d.Sd3dGame.Sd3dInputEvent;
 
-import android.hardware.SensorEvent;
 
 
 public abstract class Sd3dGameEntity
@@ -32,7 +31,7 @@ public abstract class Sd3dGameEntity
 	}
 
 	public boolean hasOnAccelerometerEvent;
-	public void onAccelerometerEvent(SensorEvent event)
+	public void onAccelerometerEvent(Sd3dInputEvent event)
 	{	
 	}
 

@@ -118,7 +118,7 @@ public class Sd3dGameSkyBoxEntityPerFace  extends Sd3dGameEntity
 			
 			
 			mObject.mMesh[i] = new Sd3dMesh();
-			mObject.mMesh[i].mVertices = FloatBuffer.allocate(18);
+			mObject.mMesh[i].mVertices = FloatBuffer.allocate(6 * Sd3dMesh.nbFloatPerVertex);
 			mObject.mMesh[i].mIndices = CharBuffer.allocate(6);
 			mObject.mMaterial[i] = new Sd3dMaterial();
 			mObject.mMaterial[i].mColors = FloatBuffer.allocate(24);
@@ -129,6 +129,13 @@ public class Sd3dGameSkyBoxEntityPerFace  extends Sd3dGameEntity
 				mObject.mMesh[i].mVertices.put(vertices[indices[i*6+j]*3+1]);
 				mObject.mMesh[i].mVertices.put(vertices[indices[i*6+j]*3+2]);
 				
+				mObject.mMesh[i].mVertices.put(0f);
+				mObject.mMesh[i].mVertices.put(0f);
+				mObject.mMesh[i].mVertices.put(0f);
+				
+				mObject.mMesh[i].mVertices.put(texcoords[j*2]);
+				mObject.mMesh[i].mVertices.put(texcoords[j*2+1]);
+				
 				mObject.mMaterial[i].mColors.put(colors[indices[i*6+j]*4]);
 				mObject.mMaterial[i].mColors.put(colors[indices[i*6+j]*4+1]);
 				mObject.mMaterial[i].mColors.put(colors[indices[i*6+j]*4+2]);	
@@ -138,10 +145,12 @@ public class Sd3dGameSkyBoxEntityPerFace  extends Sd3dGameEntity
 			mObject.mMesh[i].mVertices.position(0);	
 			mObject.mMesh[i].mIndices.position(0);	
 			mObject.mMaterial[i].mColors.position(0);
+			
+			/*
 			mObject.mMesh[i].mTexCoords = FloatBuffer.allocate(texcoords.length);
 			mObject.mMesh[i].mTexCoords.put(texcoords);
 			mObject.mMesh[i].mTexCoords.position(0);  
-			      			
+			*/    			
 			
 	        /*
 			mObject.mMesh[0].mIndices = CharBuffer.allocate(indicesFace0.length);

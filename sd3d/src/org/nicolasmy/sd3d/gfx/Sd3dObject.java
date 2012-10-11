@@ -1,5 +1,8 @@
 package org.nicolasmy.sd3d.gfx;
 
+import org.nicolasmy.sd3d.gfx.renderer.Sd3dRendererElement;
+import org.nicolasmy.sd3d.math.Sd3dMatrix;
+
 
 public class Sd3dObject
 {

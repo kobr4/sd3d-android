@@ -1,6 +1,6 @@
 package org.nicolasmy.sd3d;
 
-import org.nicolasmy.sd3d.gfx.Sd3dRendererInterface;
+import org.nicolasmy.sd3d.gfx.renderer.Sd3dRendererInterface;
 
 import android.service.wallpaper.WallpaperService;
 import android.util.Log;

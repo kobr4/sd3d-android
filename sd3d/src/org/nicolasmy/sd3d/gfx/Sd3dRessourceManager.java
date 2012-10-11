@@ -16,7 +16,7 @@ public class Sd3dRessourceManager {
 
 	private ActivityManager mActivityManager;
 	
-	public static Sd3dRessourceManager Manager;
+	private static Sd3dRessourceManager Manager;
 
 	public Sd3dRessourceManager(Activity activity) {
 		this.activity = activity;
@@ -90,6 +90,17 @@ public class Sd3dRessourceManager {
 		this.mAssetManager = assetManager;
 	}
 
-	
+	public static Sd3dRessourceManager getManager() {
+		return Manager;
+	}
+
+	public static void setManager(Sd3dRessourceManager manager) {
+		Manager = manager;
+	}
+
+	public static void init(Activity activity)
+	{
+		Manager = new Sd3dRessourceManager(activity);
+	}
 	
 }

@@ -11,6 +11,8 @@ import java.nio.CharBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
+import org.nicolasmy.sd3d.math.Sd3dMatrix;
+
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -124,7 +126,7 @@ public class Sd3dMaterial
         
 		//AssetManager am = Speedroid3D.getContext().getAssets();
 		//InputStream fis = am.open(filename);		
-		InputStream fis = Sd3dRessourceManager.Manager.getRessource(filename);
+		InputStream fis = Sd3dRessourceManager.getManager().getRessource(filename);
 		Bitmap bmp = BitmapFactory.decodeStream(fis);
 		//Bitmap bmp = BitmapFactory.decodeFile (filename);
        

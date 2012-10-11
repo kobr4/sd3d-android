@@ -68,12 +68,14 @@ public class Sd3dGameSkyBoxEntity extends Sd3dGameEntity
 		mObject.mMesh[0] = new Sd3dMesh();
 		mObject.mMesh[0].mVertices = FloatBuffer.allocate(vertices.length);
 		mObject.mMesh[0].mVertices.put(vertices);
-		mObject.mMesh[0].mVertices.position(0);			
-        
+		mObject.mMesh[0].mVertices.position(0);		
+		
+		mObject.mMesh[0].init(vertices, null, texcoords, indices);
+        /*
 		mObject.mMesh[0].mTexCoords = FloatBuffer.allocate(texcoords.length);
 		mObject.mMesh[0].mTexCoords.put(texcoords);
 		mObject.mMesh[0].mTexCoords.position(0);	
-		
+		*/
 		mObject.mMesh[0].mIndices = CharBuffer.allocate(indices.length);
 		mObject.mMesh[0].mIndices.put(indices);
 		mObject.mMesh[0].mIndices.position(0);	

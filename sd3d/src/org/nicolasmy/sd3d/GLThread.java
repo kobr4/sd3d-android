@@ -5,7 +5,7 @@ import java.util.concurrent.Semaphore;
 
 import javax.microedition.khronos.opengles.GL11;
 
-import org.nicolasmy.sd3d.gfx.Sd3dRendererInterface;
+import org.nicolasmy.sd3d.gfx.renderer.Sd3dRendererInterface;
 
 import android.util.Log;
 import android.view.SurfaceHolder;

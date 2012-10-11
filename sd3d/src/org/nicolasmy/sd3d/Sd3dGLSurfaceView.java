@@ -13,9 +13,9 @@ import javax.microedition.khronos.egl.EGLSurface;
 //import javax.microedition.khronos.opengles.GL;
 import javax.microedition.khronos.opengles.GL11;
 
-import org.nicolasmy.sd3d.gfx.Sd3dRenderer;
-import org.nicolasmy.sd3d.gfx.Sd3dRendererInterface;
 import org.nicolasmy.sd3d.gfx.Sd3dRessourceManager;
+import org.nicolasmy.sd3d.gfx.renderer.Sd3dRenderer;
+import org.nicolasmy.sd3d.gfx.renderer.Sd3dRendererInterface;
 //import javax.microedition.khronos.opengles.GL10;
 
 import android.app.ActivityManager;
@@ -30,16 +30,16 @@ import android.hardware.SensorManager;
 import android.view.MotionEvent;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.Display;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.WindowManager;
 
 
 public class Sd3dGLSurfaceView extends SurfaceView implements SurfaceHolder.Callback,android.hardware.SensorEventListener, 
 android.view.View.OnTouchListener
 {
-
-	
 	
 	private SensorManager mSensorManager; 
 	
@@ -50,9 +50,10 @@ android.view.View.OnTouchListener
     		this.mGLThread.mGame.onAccuracyChanged(sensor, accuracy);
     }
     
-	@Override
     public void onSensorChanged(SensorEvent event)
     {
+    	
+
     	if ((this.mGLThread != null)&&(this.mGLThread.mGame != null))
     		this.mGLThread.mGame.onSensorChanged(event);   	
     }
@@ -98,7 +99,6 @@ android.view.View.OnTouchListener
         		mSensorManager.getSensorList(android.hardware.Sensor.TYPE_ACCELEROMETER).get(0),
                 SensorManager.SENSOR_DELAY_GAME
                 );       
-        
      
     }
 

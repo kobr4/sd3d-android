@@ -129,8 +129,8 @@ public class Sd3dParticlesEffectHPEntity extends Sd3dGameEntity implements Sd3dR
 		
 		mRandom = new Random();
 		
-    	this.vertexShader = Sd3dRessourceManager.Manager.getText("shaders/particles_vs.gl");
-    	this.fragmentShader = Sd3dRessourceManager.Manager.getText("shaders/particles_fs.gl");
+    	this.vertexShader = Sd3dRessourceManager.getManager().getText("shaders/particles_vs.gl");
+    	this.fragmentShader = Sd3dRessourceManager.getManager().getText("shaders/particles_fs.gl");
     	
     	mMaxParticles = maxParticles;
     	mSourcePositionBuffer = FloatBuffer.allocate(4);
@@ -343,7 +343,6 @@ public class Sd3dParticlesEffectHPEntity extends Sd3dGameEntity implements Sd3dR
 	/* (non-Javadoc)
 	 * @see org.nicolasmy.sd3d.gfx.entity.Sd3dRendererElementInterface#register()
 	 */
-	@Override
 	public void register()
 	{
 		this.initShader();
@@ -353,7 +352,6 @@ public class Sd3dParticlesEffectHPEntity extends Sd3dGameEntity implements Sd3dR
 	/* (non-Javadoc)
 	 * @see org.nicolasmy.sd3d.gfx.entity.Sd3dRendererElementInterface#unregister()
 	 */
-	@Override
 	public void unregister()
 	{
 		
@@ -364,7 +362,6 @@ public class Sd3dParticlesEffectHPEntity extends Sd3dGameEntity implements Sd3dR
 	/* (non-Javadoc)
 	 * @see org.nicolasmy.sd3d.gfx.entity.Sd3dRendererElementInterface#render()
 	 */
-	@Override
 	public void prerender(FloatBuffer camPosVector, float[] mVMatrix,float[] mVPMatrix,float[] projectionMatrix, float[] normalMatrix,IntBuffer renderStateVector)
 	{
 		//ALPHA BLENDING
@@ -441,7 +438,6 @@ public class Sd3dParticlesEffectHPEntity extends Sd3dGameEntity implements Sd3dR
 	    
 	}
 	
-	@Override	
 	public void postrender()
 	{
 		
@@ -468,9 +464,17 @@ public class Sd3dParticlesEffectHPEntity extends Sd3dGameEntity implements Sd3dR
                 //one,  one, -one,
                 //-one,  one, -one,
                 -one, -one,  0,
+                0,0,0,
+                1.f, 0.f,
                 one, -one,  0,
+                0,0,0,
+                1.f, 1.f,
                 one,  one,  0,
+                0,0,0,
+                0.f, 1.f, 
                 -one,  one,  0,
+                0,0,0,
+                0.f, 0.f, 
         };
 
 		float colors[] = {
@@ -496,14 +500,14 @@ public class Sd3dParticlesEffectHPEntity extends Sd3dGameEntity implements Sd3dR
         		//3, 0, 1,    3, 1, 2
         		1, 0, 3,	2, 1, 3
         };
-		
+		/*
         float texcoords[] = {
         		1.f, 0.f,
         		1.f, 1.f,
         		0.f, 1.f, 
         		0.f, 0.f,          		
         };				
-        
+        */
         
         
         
@@ -512,8 +516,8 @@ public class Sd3dParticlesEffectHPEntity extends Sd3dGameEntity implements Sd3dR
 		mObject.mMaterial = new Sd3dMaterial[1];		
 
 		mObject.mMesh[0] = new Sd3dMesh();
-		mObject.mMesh[0].mVertices = FloatBuffer.allocate(maxParticles * vertices.length);
-		mObject.mMesh[0].mTexCoords = FloatBuffer.allocate(maxParticles * texcoords.length);
+		//mObject.mMesh[0].mVertices = FloatBuffer.allocate(maxParticles * vertices.length);
+		//mObject.mMesh[0].mTexCoords = FloatBuffer.allocate(maxParticles * texcoords.length);
 				
 	        
 			/*
@@ -527,7 +531,7 @@ public class Sd3dParticlesEffectHPEntity extends Sd3dGameEntity implements Sd3dR
 		for (int i = 0;i < maxParticles;i++)
 		{
 			mObject.mMesh[0].mVertices.put(vertices);
-			mObject.mMesh[0].mTexCoords.put(texcoords);
+			//mObject.mMesh[0].mTexCoords.put(texcoords);
 			for (int j = 0;j < indices.length; j++)
 			{
 				mObject.mMesh[0].mIndices.put((char)(indices[j] + i*4));
@@ -551,7 +555,7 @@ public class Sd3dParticlesEffectHPEntity extends Sd3dGameEntity implements Sd3dR
 		
 		mObject.mMesh[0].mIndices.position(0);
 
-		mObject.mMesh[0].mTexCoords.position(0);
+		//mObject.mMesh[0].mTexCoords.position(0);
 		
 		mObject.mMesh[0].setMeshPosition(0, 0, 0);
 		
