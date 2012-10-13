@@ -39,80 +39,10 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	private boolean useShadowMapping = false;
 	private boolean clearScreen = true;
 	private Sd3dShadowMapping shadowMapping;
-	
 	private String vertexShader;
 	private String fragmentShader;
-	
-	private final int vertexPositionHandle = 1;
-	private final int vertexColorHandle = 2;
-	private final int vertexNormalHandle = 3;
-	private final int vertexTexCoordHandle = 4;
-	
-	private int mDefaultVertexShaderHandle = 0;
-	private int mDefaultFragmentShaderHandle = 0;
-	private int mDefaultShaderProgramHandle = 0;
-	
-	/** This will be used to pass in the transformation matrix. */
-	private int mMVPMatrixHandle;
-	 
-	/** This will be used to pass in the transformation matrix. */
-	private int mMVMatrixHandle;	
-
-	/** This will be used to pass in the transformation matrix. */
-	private int mNormalMatrixHandle;		
-	
-	/** This will be used to pass in the transformation matrix. */
-	private int mShadowTextureMatrixHandle;	
-	
-	private int mColorVectorHandle;
-	
-	/** This will be used to pass in model position information. */
-	//private int mPositionHandle;
-	
-	/** This will be used to pass in model position information. */
-	//private int mTexCoordsHandle;
-	 	
-	/** This will be used to pass in model color information. */
-	//private int mColorHandle;
-
-	/** This will be used to pass in model color information. */
-	//private int mNormalHandle;	
-	
-	private int mRenderStateVectorHandle;
-	
-    /**
-     * Store the model matrix. This matrix is used to move models from object space (where each model can be thought
-     * of being located at the center of the universe) to world space.
-     */
-    private float[] mModelMatrix = new float[16];	
-    
-    private float[] mNormalMatrix = new float[16];    
-	
-    /**
-     * Store the view matrix. This can be thought of as our camera. This matrix transforms world space to eye space;
-     * it positions things relative to our eye.
-     */
-    private float[] mViewMatrix = new float[16];    
-    
-    private float[] mProjectionMatrix = new float[16];  
-    
-    private float[] mProjectionOrthoMatrix = new float[16];  
-        
-    /** Allocate storage for the final combined matrix. This will be passed into the shader program. */
-    private float[] mMVPMatrix = new float[16];    
-    
-    private float[] mMVMatrix = new float[16];
-    
-    private FloatBuffer mColorVector = FloatBuffer.allocate(4);
-    
-    private FloatBuffer mCamPos = FloatBuffer.allocate(4);
-    
-    private float[] mShadowTextureMatrix = new float[16];
-    
-    //0 : Texture flag
-    //1 : Color flag (0 : none;1 : color attrib;2 : color)
-    //2 : Render light flag
-    private IntBuffer mRenderStateVector = IntBuffer.allocate(4);
+	private Sd3dShader defaultShader;
+	private float[] mProjectionOrthoMatrix = new float[16];
     
     //private boolean mTranslucentBackground;
 	private int screenWidth;
@@ -275,150 +205,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		return 0;
 	}	
 	
-	private void initShaderAttributes()
-	{
-		if (mDefaultShaderProgramHandle != 0)
-		{	
-			// Set program handles. These will later be used to pass in values to the program.
-		    mMVPMatrixHandle = GLES20.glGetUniformLocation(mDefaultShaderProgramHandle, "u_MVPMatrix");
-		 
-			if (GLES20.glGetError() != GLES20.GL_NO_ERROR)
-			{
-				throw new RuntimeException("initShaderAttributes() AFTER CALL 1: ERROR ON OPENGL ES CALL ");
-			}	
-		    
-		    mMVMatrixHandle = GLES20.glGetUniformLocation(mDefaultShaderProgramHandle, "u_MVMatrix");	    
-		    
-		    mShadowTextureMatrixHandle = GLES20.glGetUniformLocation(mDefaultShaderProgramHandle, "u_ShadowTextureMatrix");	
-		    
-		    mNormalMatrixHandle = GLES20.glGetUniformLocation(mDefaultShaderProgramHandle, "u_NormalMatrix");	
-		    
-		    mRenderStateVectorHandle = GLES20.glGetUniformLocation(mDefaultShaderProgramHandle, "u_RenderStateVector");	
-		    
-		    mColorVectorHandle = GLES20.glGetUniformLocation(mDefaultShaderProgramHandle, "u_ColorVector");	
-		    
-			if (GLES20.glGetError() != GLES20.GL_NO_ERROR)
-			{
-				throw new RuntimeException("initShaderAttributes() AFTER CALL 1: ERROR ON OPENGL ES CALL ");
-			}
-			/*
-		    mPositionHandle = GLES20.glGetAttribLocation(mDefaultShaderProgramHandle, "a_Position");
-		    mColorHandle = GLES20.glGetAttribLocation(mDefaultShaderProgramHandle, "a_Color");
-		    mNormalHandle = GLES20.glGetAttribLocation(mDefaultShaderProgramHandle, "a_Normal");
-		    mTexCoordsHandle = GLES20.glGetAttribLocation(mDefaultShaderProgramHandle, "a_Texcoords");
-	    	*/
-			
-	    	// Tell OpenGL to use this program when rendering.
-	    	GLES20.glUseProgram(mDefaultShaderProgramHandle);
-	    	
-		}
-	}
-	
-	
-	private void initDefaultShaders()
-	{
-		if (mDefaultVertexShaderHandle == 0)
-		{
-			mDefaultVertexShaderHandle = GLES20.glCreateShader(GLES20.GL_VERTEX_SHADER);
-			Log.d("initDefaultShaders()", "mDefaultVertexShaderHandle="+mDefaultVertexShaderHandle);
-			if (mDefaultVertexShaderHandle != 0)
-			{
-				// Pass in the shader source.
-				GLES20.glShaderSource(mDefaultVertexShaderHandle, vertexShader);
-		 
-				// Compile the shader.
-				GLES20.glCompileShader(mDefaultVertexShaderHandle);
-		 
-			    // Get the compilation status.
-			    final int[] compileStatus = new int[1];
-			    GLES20.glGetShaderiv(mDefaultVertexShaderHandle, GLES20.GL_COMPILE_STATUS, compileStatus, 0);
-			 
-			    // If the compilation failed, delete the shader.
-			    if (compileStatus[0] == 0)
-			    {
-			    	Log.e("initDefaultShaders()", "Failed to compile vertex shader");
-			    	Log.d("initDefaultShaders()",GLES20.glGetShaderInfoLog(mDefaultVertexShaderHandle));
-			        GLES20.glDeleteShader(mDefaultVertexShaderHandle);
-			        mDefaultVertexShaderHandle = 0;
-			    }
-			}
-		 
-			if (mDefaultVertexShaderHandle == 0)
-			{
-				
-				throw new RuntimeException("Error creating vertex shader.");
-			}	
-		}
-		
-		if (mDefaultFragmentShaderHandle == 0)
-		{
-			mDefaultFragmentShaderHandle = GLES20.glCreateShader(GLES20.GL_FRAGMENT_SHADER);
-			Log.d("initDefaultShaders()", "mDefaultFragmentShaderHandle="+mDefaultFragmentShaderHandle);
-			if (mDefaultFragmentShaderHandle != 0)
-			{
-				// Pass in the shader source.
-				GLES20.glShaderSource(mDefaultFragmentShaderHandle, fragmentShader);
-		 
-				// Compile the shader.
-				GLES20.glCompileShader(mDefaultFragmentShaderHandle);
-		 
-			    // Get the compilation status.
-			    final int[] compileStatus = new int[1];
-			    GLES20.glGetShaderiv(mDefaultFragmentShaderHandle, GLES20.GL_COMPILE_STATUS, compileStatus, 0);
-			 
-			    // If the compilation failed, delete the shader.
-			    if (compileStatus[0] == 0)
-			    {
-			    	Log.e("initDefaultShaders()", "Failed to compile fragment shader");
-			    	Log.d("initDefaultShaders()",GLES20.glGetShaderInfoLog(mDefaultFragmentShaderHandle));			    	
-			        GLES20.glDeleteShader(mDefaultFragmentShaderHandle);
-			        mDefaultFragmentShaderHandle = 0;
-			    }
-			}
-		 
-			if (mDefaultFragmentShaderHandle == 0)
-			{
-				throw new RuntimeException("Error creating fragment shader.");
-			}	
-		}
-		
-		if (mDefaultShaderProgramHandle == 0)
-		{
-			mDefaultShaderProgramHandle = GLES20.glCreateProgram();
-			
-		    // Bind the vertex shader to the program.
-		    GLES20.glAttachShader(mDefaultShaderProgramHandle, mDefaultVertexShaderHandle);
-		 
-		    // Bind the fragment shader to the program.
-		    GLES20.glAttachShader(mDefaultShaderProgramHandle, mDefaultFragmentShaderHandle);
-		 
-		    // Bind attributes
-		    GLES20.glBindAttribLocation(mDefaultShaderProgramHandle, this.vertexPositionHandle, "a_Position");
-		    GLES20.glBindAttribLocation(mDefaultShaderProgramHandle, this.vertexColorHandle, "a_Color");
-		    GLES20.glBindAttribLocation(mDefaultShaderProgramHandle, this.vertexTexCoordHandle, "a_Texcoords");
-		    GLES20.glBindAttribLocation(mDefaultShaderProgramHandle, this.vertexNormalHandle, "a_Normal");
-		    
-		    // Link the two shaders together into a program.
-		    GLES20.glLinkProgram(mDefaultShaderProgramHandle);
-		 
-		    // Get the link status.
-		    final int[] linkStatus = new int[1];
-		    GLES20.glGetProgramiv(mDefaultShaderProgramHandle, GLES20.GL_LINK_STATUS, linkStatus, 0);
-		 
-		    // If the link failed, delete the program.
-		    if (linkStatus[0] == 0)
-		    {
-		        GLES20.glDeleteProgram(mDefaultShaderProgramHandle);
-		        mDefaultShaderProgramHandle = 0;
-		    }
-		    	    
-		}
-		
-		if (mDefaultShaderProgramHandle == 0)
-		{
-		    throw new RuntimeException("Error creating program.");
-		}			
-	}
+
 	
 	public Sd3dRendererElement[] createRenderElement(Sd3dObject object)
 	{
@@ -595,7 +382,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	}
 	
 	FloatBuffer vertexBuffer;
-	private void drawShadowVolumeQuad()
+	private void drawShadowVolumeQuad(Sd3dShader shader)
 	{		
 		
 		float vertices[] = {
@@ -629,18 +416,18 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		}
 		
 		//OpenGL stuffs	
-		Matrix.setIdentityM(mModelMatrix, 0);
+		Matrix.setIdentityM(shader.modelMatrix, 0);
 		//Matrix.setIdentityM(mViewMatrix, 0);
 		
-		mRenderStateVector.put(2, 0);//NO LIGHT	
-		mRenderStateVector.put(1, 2);//HAS COLOR UNIFORM
-		mRenderStateVector.put(0, 0);//NO TEXTURE
+		shader.renderStateVector.put(2, 0);//NO LIGHT	
+		shader.renderStateVector.put(1, 2);//HAS COLOR UNIFORM
+		shader.renderStateVector.put(0, 0);//NO TEXTURE
 		
 		//Colors 
-		mColorVector.put(0,0f);
-		mColorVector.put(1,0f);
-		mColorVector.put(2,0f);
-		mColorVector.put(3,0.3f);
+		shader.colorVector.put(0,0f);
+		shader.colorVector.put(1,0f);
+		shader.colorVector.put(2,0f);
+		shader.colorVector.put(3,0.3f);
 		
 	    // This multiplies the view matrix by the model matrix, and stores the result in the MVP matrix
 	    // (which currently contains model * view).
@@ -649,35 +436,35 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	 
 	    // This multiplies the modelview matrix by the projection matrix, and stores the result in the MVP matrix
 	    // (which now contains model * view * projection).
-	    Matrix.multiplyMM(mMVPMatrix, 0, mProjectionOrthoMatrix, 0, mModelMatrix, 0);			
+	    Matrix.multiplyMM(shader.MVPMatrix, 0, shader.projectionOrthoMatrix, 0, shader.modelMatrix, 0);			
 	  
 
-	    GLES20.glUseProgram(this.mDefaultShaderProgramHandle);
+	    shader.bind();
 	    
 
-	    GLES20.glUniformMatrix4fv(mMVMatrixHandle, 1, false, mMVMatrix, 0);
-	    GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mMVPMatrix, 0);
-	    GLES20.glUniform4iv(mRenderStateVectorHandle, 1, mRenderStateVector);		
-	    GLES20.glUniform4fv(mColorVectorHandle, 1, mColorVector);	
+	    GLES20.glUniformMatrix4fv(shader.getMVMatrixHandle(), 1, false, shader.MVMatrix, 0);
+	    GLES20.glUniformMatrix4fv(shader.getMVPMatrixHandle(), 1, false, shader.MVPMatrix, 0);
+	    GLES20.glUniform4iv(shader.getRenderStateVectorHandle(), 1, shader.renderStateVector);		
+	    GLES20.glUniform4fv(shader.getColorVectorHandle(), 1, shader.colorVector);	
 	    
 		
 		GLES20.glEnable(GL11.GL_BLEND);
 		GLES20.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		
-		GLES20.glVertexAttribPointer(this.vertexPositionHandle, 3, GLES20.GL_FLOAT, false, 0, vertexBuffer);
-		GLES20.glEnableVertexAttribArray(vertexPositionHandle);
+		GLES20.glVertexAttribPointer(Sd3dShader.vertexPositionHandle, 3, GLES20.GL_FLOAT, false, 0, vertexBuffer);
+		GLES20.glEnableVertexAttribArray(Sd3dShader.vertexPositionHandle);
 		
 		
 		GLES20.glDrawArrays(GL11.GL_TRIANGLES, 0, 6);
 		
-		GLES20.glDisableVertexAttribArray(vertexPositionHandle);
+		GLES20.glDisableVertexAttribArray(Sd3dShader.vertexPositionHandle);
 		
 		GLES20.glDisable(GL11.GL_BLEND);
 		
 	}
 	
 	
-	private void drawHorizontalPlane(Sd3dScene scene)
+	private void drawHorizontalPlane(Sd3dScene scene,Sd3dShader shader)
 	{		
 		float height = -5f;
 		float size = 100f;
@@ -715,45 +502,45 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		}
 		
 		//OpenGL stuffs	
-		Matrix.setIdentityM(mModelMatrix, 0);
+		Matrix.setIdentityM(shader.modelMatrix, 0);
 		//Matrix.setIdentityM(mViewMatrix, 0);
-		Matrix.translateM(mModelMatrix, 0, 
+		Matrix.translateM(shader.modelMatrix, 0, 
 				scene.getCamera().getPosition()[0], 
 				scene.getCamera().getPosition()[1], 
 				scene.getCamera().getPosition()[2]);
 		
 		Log.d("BallJump",scene.getCamera().getPosition()[0]+" - "+scene.getCamera().getPosition()[2]);
-		mRenderStateVector.put(2, 0);//NO LIGHT	
-		mRenderStateVector.put(1, 2);//HAS COLOR UNIFORM
-		mRenderStateVector.put(0, 0);//NO TEXTURE
+		shader.renderStateVector.put(2, 0);//NO LIGHT	
+		shader.renderStateVector.put(1, 2);//HAS COLOR UNIFORM
+		shader.renderStateVector.put(0, 0);//NO TEXTURE
 		
 		//Colors 
-		mColorVector.put(0,1f);
-		mColorVector.put(1,1f);
-		mColorVector.put(2,1f);
-		mColorVector.put(3,1.0f);
+		shader.colorVector.put(0,1f);
+		shader.colorVector.put(1,1f);
+		shader.colorVector.put(2,1f);
+		shader.colorVector.put(3,1.0f);
 		
-	    Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mModelMatrix, 0);			
+	    Matrix.multiplyMM(shader.MVPMatrix, 0, shader.projectionMatrix, 0, shader.modelMatrix, 0);			
 		
 	    
-	    GLES20.glUseProgram(this.mDefaultShaderProgramHandle);
+	    shader.bind();
 	    
 
-	    GLES20.glUniformMatrix4fv(mMVMatrixHandle, 1, false, mMVMatrix, 0);
-	    GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mMVPMatrix, 0);
-	    GLES20.glUniform4iv(mRenderStateVectorHandle, 1, mRenderStateVector);		
-	    GLES20.glUniform4fv(mColorVectorHandle, 1, mColorVector);	
+	    GLES20.glUniformMatrix4fv(shader.getMVMatrixHandle(), 1, false, shader.MVMatrix, 0);
+	    GLES20.glUniformMatrix4fv(shader.getMVPMatrixHandle(), 1, false, shader.MVPMatrix, 0);
+	    GLES20.glUniform4iv(shader.getRenderStateVectorHandle(), 1, shader.renderStateVector);		
+	    GLES20.glUniform4fv(shader.getColorVectorHandle(), 1, shader.colorVector);	
 	    
 		
 		//GLES20.glEnable(GL11.GL_BLEND);
 		//GLES20.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		
-		GLES20.glVertexAttribPointer(this.vertexPositionHandle, 3, GLES20.GL_FLOAT, false, 0, vertexBuffer);
-		GLES20.glEnableVertexAttribArray(vertexPositionHandle);
+		GLES20.glVertexAttribPointer(Sd3dShader.vertexPositionHandle, 3, GLES20.GL_FLOAT, false, 0, vertexBuffer);
+		GLES20.glEnableVertexAttribArray(Sd3dShader.vertexPositionHandle);
 		
 		GLES20.glDrawArrays(GL11.GL_TRIANGLES, 0, 6);
 		
-		GLES20.glDisableVertexAttribArray(vertexPositionHandle);
+		GLES20.glDisableVertexAttribArray(Sd3dShader.vertexPositionHandle);
 		
 		//GLES20.glDisable(GL11.GL_BLEND);		
 	}	
@@ -796,32 +583,32 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		rm[rmOffset + 15] = 1.0f;
 	}	
 	
-	public void renderRenderElementToDepth(Sd3dRendererElement element)
+	public void renderRenderElementToDepth(Sd3dRendererElement element,Sd3dShader shader)
 	{	
 		
-		Matrix.setIdentityM(mModelMatrix, 0);
-		Matrix.setIdentityM(mNormalMatrix, 0);
+		Matrix.setIdentityM(shader.modelMatrix, 0);
+		Matrix.setIdentityM(shader.normalMatrix, 0);
 		
 		if (element.mRenderLight)
 		{				
-			mRenderStateVector.put(2, 1);//LIGHT	
+			shader.renderStateVector.put(2, 1);//LIGHT	
 		}		
 		{
-			mRenderStateVector.put(2, 0);//NO LIGHT	
+			shader.renderStateVector.put(2, 0);//NO LIGHT	
 		}
 
 		if (!element.mIsShadowVolume)
 		if (element.mOrientation != null)
 		{
-			Sd3dRendererGl20.setRotateEulerM(mNormalMatrix, 0, element.mOrientation[0], element.mOrientation[1], element.mOrientation[2]);
-			Matrix.multiplyMM(mModelMatrix, 0, mNormalMatrix, 0, mModelMatrix,0);
+			Sd3dRendererGl20.setRotateEulerM(shader.normalMatrix, 0, element.mOrientation[0], element.mOrientation[1], element.mOrientation[2]);
+			Matrix.multiplyMM(shader.modelMatrix, 0, shader.normalMatrix, 0, shader.modelMatrix,0);
 		}
 		
 		if (element.mPosition != null)
 		{
 			Matrix.setIdentityM(matrix, 0);
 			Matrix.translateM(matrix, 0, element.mPosition[0], element.mPosition[1], element.mPosition[2]);		
-			Matrix.multiplyMM(mModelMatrix, 0, matrix, 0, mModelMatrix,0);
+			Matrix.multiplyMM(shader.modelMatrix, 0, matrix, 0, shader.modelMatrix,0);
 		}			
 		
 				
@@ -836,14 +623,14 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		{
 			GLES20.glBindBuffer(GL11.GL_ARRAY_BUFFER, element.mVertexBufferName);    
 			//GLES20.glVertexAttribPointer(this.mPositionHandle, 3, GLES20.GL_FLOAT, false, 0, 0);
-			GLES20.glVertexAttribPointer(this.vertexPositionHandle, 3, GLES20.GL_FLOAT, false, Sd3dMesh.nbFloatPerVertex*4, 0);
-		    GLES20.glEnableVertexAttribArray(vertexPositionHandle);
+			GLES20.glVertexAttribPointer(Sd3dShader.vertexPositionHandle, 3, GLES20.GL_FLOAT, false, Sd3dMesh.nbFloatPerVertex*4, 0);
+		    GLES20.glEnableVertexAttribArray(Sd3dShader.vertexPositionHandle);
 		    
-			GLES20.glVertexAttribPointer(this.vertexNormalHandle, 3, GLES20.GL_FLOAT, false, Sd3dMesh.nbFloatPerVertex*4, 3*4);
-		    GLES20.glEnableVertexAttribArray(vertexNormalHandle);	
+			GLES20.glVertexAttribPointer(Sd3dShader.vertexNormalHandle, 3, GLES20.GL_FLOAT, false, Sd3dMesh.nbFloatPerVertex*4, 3*4);
+		    GLES20.glEnableVertexAttribArray(Sd3dShader.vertexNormalHandle);	
 		    
-			GLES20.glVertexAttribPointer(this.vertexTexCoordHandle, 2, GLES20.GL_FLOAT, false, Sd3dMesh.nbFloatPerVertex*4, 6*4);
-		    GLES20.glEnableVertexAttribArray(vertexTexCoordHandle);		    
+			GLES20.glVertexAttribPointer(Sd3dShader.vertexTexCoordHandle, 2, GLES20.GL_FLOAT, false, Sd3dMesh.nbFloatPerVertex*4, 6*4);
+		    GLES20.glEnableVertexAttribArray(Sd3dShader.vertexTexCoordHandle);		    
 		    
 		}
 		
@@ -862,16 +649,16 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		
 	    // This multiplies the view matrix by the model matrix, and stores the result in the MVP matrix
 	    // (which currently contains model * view).    
-		Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0);
+		Matrix.multiplyMM(shader.MVMatrix, 0, shader.viewMatrix, 0, shader.modelMatrix, 0);
 	    				
 		
 	    // This multiplies the modelview matrix by the projection matrix, and stores the result in the MVP matrix
 	    // (which now contains model * view * projection).
-	    Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0);	
+	    Matrix.multiplyMM(shader.MVPMatrix, 0, shader.projectionMatrix, 0, shader.MVMatrix, 0);	
 	    
 
 	
-	    GLES20.glUniformMatrix4fv(shadowMapping.mMVPMatrixHandle, 1, false, mMVPMatrix, 0);
+	    GLES20.glUniformMatrix4fv(shader.getMVPMatrixHandle(), 1, false, shader.MVPMatrix, 0);
 	    	
 		
 	    if (element.mIndiceBufferName != 0)
@@ -887,9 +674,9 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	
 
 
-    	GLES20.glEnableVertexAttribArray(vertexTexCoordHandle);
-    	GLES20.glDisableVertexAttribArray(vertexNormalHandle);
-    	GLES20.glDisableVertexAttribArray(vertexColorHandle);
+    	GLES20.glEnableVertexAttribArray(Sd3dShader.vertexTexCoordHandle);
+    	GLES20.glDisableVertexAttribArray(Sd3dShader.vertexNormalHandle);
+    	GLES20.glDisableVertexAttribArray(Sd3dShader.vertexColorHandle);
 
 	    	    
 	    
@@ -913,32 +700,32 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	}	
 	
 	
-	public void renderRenderElement(Sd3dRendererElement element)
+	public void renderRenderElement(Sd3dRendererElement element,Sd3dShader shader)
 	{	
 		
-		Matrix.setIdentityM(mModelMatrix, 0);
-		Matrix.setIdentityM(mNormalMatrix, 0);
+		Matrix.setIdentityM(shader.modelMatrix, 0);
+		Matrix.setIdentityM(shader.normalMatrix, 0);
 		
 		if (element.mRenderLight)
 		{				
-			mRenderStateVector.put(2, 1);//LIGHT	
+			shader.renderStateVector.put(2, 1);//LIGHT	
 		}		
 		{
-			mRenderStateVector.put(2, 0);//NO LIGHT	
+			shader.renderStateVector.put(2, 0);//NO LIGHT	
 		}
 
 		if (!element.mIsShadowVolume)
 		if (element.mOrientation != null)
 		{
-			Sd3dRendererGl20.setRotateEulerM(mNormalMatrix, 0, element.mOrientation[0], element.mOrientation[1], element.mOrientation[2]);
-			Matrix.multiplyMM(mModelMatrix, 0, mNormalMatrix, 0, mModelMatrix,0);
+			Sd3dRendererGl20.setRotateEulerM(shader.normalMatrix, 0, element.mOrientation[0], element.mOrientation[1], element.mOrientation[2]);
+			Matrix.multiplyMM(shader.modelMatrix, 0, shader.normalMatrix, 0, shader.modelMatrix,0);
 		}
 		
 		if (element.mPosition != null)
 		{
 			Matrix.setIdentityM(matrix, 0);
 			Matrix.translateM(matrix, 0, element.mPosition[0], element.mPosition[1], element.mPosition[2]);		
-			Matrix.multiplyMM(mModelMatrix, 0, matrix, 0, mModelMatrix,0);
+			Matrix.multiplyMM(shader.modelMatrix, 0, matrix, 0, shader.modelMatrix,0);
 		}			
 		
 				
@@ -953,14 +740,14 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		{
 			GLES20.glBindBuffer(GL11.GL_ARRAY_BUFFER, element.mVertexBufferName);    
 			//GLES20.glVertexAttribPointer(this.mPositionHandle, 3, GLES20.GL_FLOAT, false, 0, 0);
-			GLES20.glVertexAttribPointer(this.vertexPositionHandle, 3, GLES20.GL_FLOAT, false, Sd3dMesh.nbFloatPerVertex*4, 0);
-		    GLES20.glEnableVertexAttribArray(vertexPositionHandle);
+			GLES20.glVertexAttribPointer(Sd3dShader.vertexPositionHandle, 3, GLES20.GL_FLOAT, false, Sd3dMesh.nbFloatPerVertex*4, 0);
+		    GLES20.glEnableVertexAttribArray(Sd3dShader.vertexPositionHandle);
 		    
-			GLES20.glVertexAttribPointer(this.vertexNormalHandle, 3, GLES20.GL_FLOAT, false, Sd3dMesh.nbFloatPerVertex*4, 3*4);
-		    GLES20.glEnableVertexAttribArray(vertexNormalHandle);	
+			GLES20.glVertexAttribPointer(Sd3dShader.vertexNormalHandle, 3, GLES20.GL_FLOAT, false, Sd3dMesh.nbFloatPerVertex*4, 3*4);
+		    GLES20.glEnableVertexAttribArray(Sd3dShader.vertexNormalHandle);	
 		    
-			GLES20.glVertexAttribPointer(this.vertexTexCoordHandle, 2, GLES20.GL_FLOAT, false, Sd3dMesh.nbFloatPerVertex*4, 6*4);
-		    GLES20.glEnableVertexAttribArray(vertexTexCoordHandle);		    
+			GLES20.glVertexAttribPointer(Sd3dShader.vertexTexCoordHandle, 2, GLES20.GL_FLOAT, false, Sd3dMesh.nbFloatPerVertex*4, 6*4);
+		    GLES20.glEnableVertexAttribArray(Sd3dShader.vertexTexCoordHandle);		    
 		    
 		}
 
@@ -988,9 +775,9 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		{		
 			GLES20.glBindBuffer(GL11.GL_ARRAY_BUFFER, element.mObject.mMaterial[0].mColorName);  
 			//GLES20.glVertexAttribPointer(this.mColorHandle, 4, GLES20.GL_FLOAT, false, 0, 0);
-			GLES20.glVertexAttribPointer(this.vertexColorHandle, 4, GLES20.GL_FLOAT, false, 0, 0);
-		    GLES20.glEnableVertexAttribArray(vertexColorHandle);
-		    mRenderStateVector.put(1, 1);
+			GLES20.glVertexAttribPointer(Sd3dShader.vertexColorHandle, 4, GLES20.GL_FLOAT, false, 0, 0);
+		    GLES20.glEnableVertexAttribArray(Sd3dShader.vertexColorHandle);
+		    shader.renderStateVector.put(1, 1);
 		}
 		else
 		{	
@@ -1001,9 +788,9 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			}
 			else
 			{
-				GLES20.glDisableVertexAttribArray(vertexColorHandle);
+				GLES20.glDisableVertexAttribArray(Sd3dShader.vertexColorHandle);
 			}
-			mRenderStateVector.put(1, 0);
+			shader.renderStateVector.put(1, 0);
 		}
 	
 		if (element.mTextureName != 0)
@@ -1011,11 +798,11 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
 			GLES20.glBindTexture(GL11.GL_TEXTURE_2D, element.mTextureName);
 			//GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,shadowMapping.renderTex[0]);
-			mRenderStateVector.put(0, 1);
+			shader.renderStateVector.put(0, 1);
 		} 	
 		else 
 		{
-			mRenderStateVector.put(0, 0);
+			shader.renderStateVector.put(0, 0);
 		}
 		
 		if (this.useShadowMapping)
@@ -1023,7 +810,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			// send the depth texture
 			GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
 			GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, shadowMapping.renderTex[0]);
-			GLES20.glUniform1i(GLES20.glGetUniformLocation(this.mDefaultShaderProgramHandle, "shadow_texture"), 1);
+			GLES20.glUniform1i(GLES20.glGetUniformLocation(shader.getProgramHandle(), "shadow_texture"), 1);
 		}
 		
 		if (element.mAlphaTest)
@@ -1041,48 +828,48 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		
 	    // This multiplies the view matrix by the model matrix, and stores the result in the MVP matrix
 	    // (which currently contains model * view).    
-		Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0);
+		Matrix.multiplyMM(shader.MVMatrix, 0, shader.viewMatrix, 0, shader.modelMatrix, 0);
 		
 	    // This multiplies the modelview matrix by the projection matrix, and stores the result in the MVP matrix
 	    // (which now contains model * view * projection).
-	    Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mMVMatrix, 0);	
+	    Matrix.multiplyMM(shader.MVPMatrix, 0, shader.projectionMatrix, 0, shader.MVMatrix, 0);	
 	    
 		if (this.useShadowMapping)
 		{
 			//Computing shadow projection matrix
-			Matrix.multiplyMM(shadowMapping.mvMatrix,0, shadowMapping.viewMatrix,0,mModelMatrix,0);	 
-			Matrix.multiplyMM(mShadowTextureMatrix,0,mProjectionMatrix,0, shadowMapping.mvMatrix, 0);
+			Matrix.multiplyMM(shadowMapping.shader.MVMatrix,0, shadowMapping.shader.viewMatrix,0,shader.modelMatrix,0);	 
+			Matrix.multiplyMM(shader.shadowTextureMatrix,0,shader.projectionMatrix,0, shadowMapping.shader.MVMatrix, 0);
 		}
 		
 		if (element.mRenderLight)
 		{			
-			mRenderStateVector.put(2, 1);			
+			shader.renderStateVector.put(2, 1);			
 		}
 		else
 		{
-			mRenderStateVector.put(2, 0);	
+			shader.renderStateVector.put(2, 0);	
 		}	 	    
 	    
 
 	
 	    if (element.mRendererInterface != null)
 	    {
-	    	element.mRendererInterface.prerender(mCamPos, mMVMatrix,mMVPMatrix,mProjectionMatrix,mNormalMatrix,mRenderStateVector);
+	    	element.mRendererInterface.prerender(shader.camPos, shader.MVMatrix,shader.MVPMatrix,shader.projectionMatrix,shader.normalMatrix,shader.renderStateVector);
 	    }
 	    else
 	    {
 		    
 		    
-		    GLES20.glUniformMatrix4fv(mMVMatrixHandle, 1, false, mMVMatrix, 0);
+		    GLES20.glUniformMatrix4fv(shader.getMVMatrixHandle(), 1, false, shader.MVMatrix, 0);
 		    
-		    GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mMVPMatrix, 0);
+		    GLES20.glUniformMatrix4fv(shader.getMVPMatrixHandle(), 1, false, shader.MVPMatrix, 0);
 		    //GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mShadowTextureMatrix, 0);
 		    
-		    GLES20.glUniformMatrix4fv(mNormalMatrixHandle, 1, false, mNormalMatrix, 0);
+		    GLES20.glUniformMatrix4fv(shader.getNormalMatrixHandle(), 1, false, shader.normalMatrix, 0);
 		    
 		    //GLES20.glUniformMatrix4fv(mShadowTextureMatrixHandle, 1, false, mShadowTextureMatrix, 0);
-		    GLES20.glUniformMatrix4fv(mShadowTextureMatrixHandle, 1, false,mShadowTextureMatrix,0);
-		    GLES20.glUniform4iv(mRenderStateVectorHandle, 1, mRenderStateVector);	
+		    GLES20.glUniformMatrix4fv(shader.getShadowTextureMatrixHandle(), 1, false,shader.shadowTextureMatrix,0);
+		    GLES20.glUniform4iv(shader.getRenderStateVectorHandle(), 1, shader.renderStateVector);	
 		        	
 	    }
 	    	
@@ -1105,9 +892,9 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	    }
 	    else
 	    {
-	    	GLES20.glEnableVertexAttribArray(vertexTexCoordHandle);
-	    	GLES20.glDisableVertexAttribArray(vertexNormalHandle);
-	    	GLES20.glDisableVertexAttribArray(vertexColorHandle);
+	    	GLES20.glEnableVertexAttribArray(Sd3dShader.vertexTexCoordHandle);
+	    	GLES20.glDisableVertexAttribArray(Sd3dShader.vertexNormalHandle);
+	    	GLES20.glDisableVertexAttribArray(Sd3dShader.vertexColorHandle);
 	    }
 	    	    
 	    
@@ -1183,12 +970,12 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		//mGl.glPopMatrix();		
 	}
 	
-	public void renderRenderListShadowVolume()
+	private void renderRenderListShadowVolume(Sd3dShader shader)
 	{
 		for (int i = 0; i < mCountRenderElement;i++)
 		{
 			if (mRenderList[i].mIsShadowVolume)
-			  renderRenderElement(mRenderList[i]);
+			  renderRenderElement(mRenderList[i],shader);
 		}			
 	}
 	
@@ -1202,50 +989,50 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		}		
 	}
 	
-	public void renderRenderInScreenSpaceList()
+	private void renderRenderInScreenSpaceList(Sd3dShader shader)
 	{
 		for (int i = 0; i < mCountRenderElement;i++)
 		{
 			if ((!mRenderList[i].mIsShadowVolume)&&(mRenderList[i].mIsInScreenSpace))
 			{
-			  renderRenderElement(mRenderList[i]);
+			  renderRenderElement(mRenderList[i],shader);
 			}
 		}		
 	}
 	
-	public void renderRenderListToDepth()
+	public void renderRenderListToDepth(Sd3dShader shader)
 	{
 		for (int i = 0; i < mCountRenderElement;i++)
 		{
 			if ((!mRenderList[i].mIsShadowVolume)&&(!mRenderList[i].mIsInScreenSpace))
-			  renderRenderElementToDepth(mRenderList[i]);
+			  renderRenderElementToDepth(mRenderList[i],shader);
 		}
 	}	
 	
-	public void renderRenderList()
+	public void renderRenderList(Sd3dShader shader)
 	{
 		for (int i = 0; i < mCountRenderElement;i++)
 		{
 			if ((!mRenderList[i].mIsShadowVolume)&&(!mRenderList[i].mIsInScreenSpace))
-			  renderRenderElement(mRenderList[i]);
+			  renderRenderElement(mRenderList[i],shader);
 		}
 	}
 	
 	
-	public void renderShadowVolumeScene(Sd3dScene scene)
+	public void renderShadowVolumeScene(Sd3dScene scene,Sd3dShader shader)
 	{
         //GLES20.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
         //GLES20.glFrontFace(GL11.GL_CW);
         //GLES20.glCullFace(GL11.GL_BACK);
 
-		Matrix.setIdentityM(mViewMatrix, 0);
+		Matrix.setIdentityM(shader.viewMatrix, 0);
 		
 		if (scene.getCamera().getRotationMatrix() == null)
 		{
 			float rot[] = scene.getCamera().getOrientation();           
-			Matrix.rotateM(mViewMatrix, 0, rot[0], 1.0f, 0.0f, 0.0f);
-			Matrix.rotateM(mViewMatrix, 0, rot[1], 0.0f, 1.0f, 0.0f);
-			Matrix.rotateM(mViewMatrix, 0, rot[2], 0.0f, 0.0f, 1.0f);
+			Matrix.rotateM(shader.viewMatrix, 0, rot[0], 1.0f, 0.0f, 0.0f);
+			Matrix.rotateM(shader.viewMatrix, 0, rot[1], 0.0f, 1.0f, 0.0f);
+			Matrix.rotateM(shader.viewMatrix, 0, rot[2], 0.0f, 0.0f, 1.0f);
 		}
 		else
 		{
@@ -1253,30 +1040,30 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			
 			//GLU.gluLookAt(mGl, 0, 0, 2, 0, 0, 0, 0, 1, 0);
 			Matrix.setLookAtM(matrix, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0);
-			Matrix.multiplyMM(mViewMatrix, 0, scene.getCamera().getRotationMatrix(), 0, matrix, 0);
+			Matrix.multiplyMM(shader.viewMatrix, 0, scene.getCamera().getRotationMatrix(), 0, matrix, 0);
 		}
 			
         float pos[] = scene.getCamera().getPosition();
 
-        Matrix.translateM(mViewMatrix, 0, -pos[0], -pos[1], -pos[2]);
+        Matrix.translateM(shader.viewMatrix, 0, -pos[0], -pos[1], -pos[2]);
 
         //Copy camera position
-        mCamPos.position(0);
-        mCamPos.put(pos[0]);
-        mCamPos.put(pos[1]);
-        mCamPos.put(pos[2]);
-        mCamPos.put(0.f);
+        shader.camPos.position(0);
+        shader.camPos.put(pos[0]);
+        shader.camPos.put(pos[1]);
+        shader.camPos.put(pos[2]);
+        shader.camPos.put(0.f);
         
         this.setupShadowVolumeStep1();
 		this.setupShadowVolumeStep2();
-		this.renderRenderListShadowVolume();
+		this.renderRenderListShadowVolume(shader);
 
 		this.setupShadowVolumeStep3();
-		this.renderRenderListShadowVolume();        
+		this.renderRenderListShadowVolume(shader);        
 
 		this.setupShadowVolumeStep4();
 		
-		drawShadowVolumeQuad();
+		drawShadowVolumeQuad(shader);
 
 		this.setupShadowVolumeStep5();
         
@@ -1290,7 +1077,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	}
 	
 
-	public void renderSceneFromLightPOV(Sd3dScene scene)
+	public void renderSceneFromLightPOV(Sd3dScene scene,Sd3dShader shader)
 	{
 		GLES20.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		/*
@@ -1301,45 +1088,12 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			*/
         GLES20.glFrontFace(GL11.GL_CW);
  
-		Matrix.setLookAtM(mViewMatrix, 0, 
+		Matrix.setLookAtM(shader.viewMatrix, 0, 
 				scene.getCamera().getPosition()[0] + 10, scene.getCamera().getPosition()[1] + 10, scene.getCamera().getPosition()[2] + 10, 
 				scene.getCamera().getPosition()[0], scene.getCamera().getPosition()[1], scene.getCamera().getPosition()[2], 
 				0, 1, 0);
-		
-		Matrix.setLookAtM(shadowMapping.viewMatrix, 0, 
-				scene.getCamera().getPosition()[0] + 10, scene.getCamera().getPosition()[1] + 10, scene.getCamera().getPosition()[2] + 10, 
-				scene.getCamera().getPosition()[0], scene.getCamera().getPosition()[1], scene.getCamera().getPosition()[2], 
-				0, 1, 0);
-				
-		/*
-		if (scene.getCamera().getRotationMatrix() == null)
-		{
-			
-			float rot[] = scene.getCamera().getOrientation();           
-			Matrix.rotateM(mViewMatrix, 0, rot[0], 1.0f, 0.0f, 0.0f);
-			Matrix.rotateM(mViewMatrix, 0, rot[1], 0.0f, 1.0f, 0.0f);
-			Matrix.rotateM(mViewMatrix, 0, rot[2], 0.0f, 0.0f, 1.0f);
-			
-		}
-		else
-		{
-			//mGl.glLoadMatrixf(scene.getCamera().getRotationMatrix(), 0);
-			
-			//GLU.gluLookAt(mGl, 0, 0, 2, 0, 0, 0, 0, 1, 0);
-			
-			//Matrix.multiplyMM(mViewMatrix, 0, scene.getCamera().getRotationMatrix(), 0, matrix, 0);
-			//Matrix.multiplyMM(mViewMatrix, 0, scene.getCamera().getRotationMatrix(), 0, matrix, 0);
-		}*/
-			
-		//float pos[] = scene.getCamera().getPosition();
-		//Matrix.translateM(mViewMatrix, 0, -pos[0], -pos[1], -pos[2]);
-
         
-        //this.setupLightVector(0.f, 0.f, 0.f); 
-
-        //updateFrustumFaster();        
-        this.renderRenderListToDepth();	
-         
+        renderRenderListToDepth(shader);	
 	}
 	
 	public void renderScene(Sd3dScene scene)
@@ -1360,12 +1114,13 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		if (this.useShadowMapping)
 		{
 			shadowMapping.onRenderToDepthTexture();
-			this.renderSceneFromLightPOV(scene);
+			this.renderSceneFromLightPOV(scene,this.shadowMapping.shader);
 			shadowMapping.onRenderToScreen(screenWidth,screenHeight);
 		}
 
 
-		GLES20.glUseProgram(this.mDefaultShaderProgramHandle);		
+		defaultShader.bind();
+		
 		GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		
 		if (this.clearScreen)
@@ -1375,15 +1130,15 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
         GLES20.glFrontFace(GL11.GL_CW);
         GLES20.glCullFace(GL11.GL_BACK);
 
-		Matrix.setIdentityM(mViewMatrix, 0);
+		Matrix.setIdentityM(defaultShader.viewMatrix, 0);
        
 		if (scene.getCamera().getRotationMatrix() == null)
 		{
 			
 			float rot[] = scene.getCamera().getOrientation();           
-			Matrix.rotateM(mViewMatrix, 0, rot[0], 1.0f, 0.0f, 0.0f);
-			Matrix.rotateM(mViewMatrix, 0, rot[1], 0.0f, 1.0f, 0.0f);
-			Matrix.rotateM(mViewMatrix, 0, rot[2], 0.0f, 0.0f, 1.0f);
+			Matrix.rotateM(defaultShader.viewMatrix, 0, rot[0], 1.0f, 0.0f, 0.0f);
+			Matrix.rotateM(defaultShader.viewMatrix, 0, rot[1], 0.0f, 1.0f, 0.0f);
+			Matrix.rotateM(defaultShader.viewMatrix, 0, rot[2], 0.0f, 0.0f, 1.0f);
 			
 		}
 		else
@@ -1393,39 +1148,39 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			//GLU.gluLookAt(mGl, 0, 0, 2, 0, 0, 0, 0, 1, 0);
 			Matrix.setLookAtM(matrix, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0);
 			//Matrix.multiplyMM(mViewMatrix, 0, scene.getCamera().getRotationMatrix(), 0, matrix, 0);
-			Matrix.multiplyMM(mViewMatrix, 0, scene.getCamera().getRotationMatrix(), 0, matrix, 0);
+			Matrix.multiplyMM(defaultShader.viewMatrix, 0, scene.getCamera().getRotationMatrix(), 0, matrix, 0);
 		}
 			
 		float pos[] = scene.getCamera().getPosition();
-		Matrix.translateM(mViewMatrix, 0, -pos[0], -pos[1], -pos[2]);
+		Matrix.translateM(defaultShader.viewMatrix, 0, -pos[0], -pos[1], -pos[2]);
 
         
         //this.setupLightVector(0.f, 0.f, 0.f); 
 
-        updateFrustumFaster();        
+        updateFrustumFaster(defaultShader);        
         
-        this.renderRenderList();
+        this.renderRenderList(defaultShader);
         
         //drawHorizontalPlane(scene);
         //drawShadowVolumeQuad();
         
-        float[] tmp = mProjectionMatrix;
-        this.mProjectionMatrix = this.mProjectionOrthoMatrix;
-        Matrix.setIdentityM(mViewMatrix, 0);
-        this.renderRenderInScreenSpaceList(); 
+        float[] tmp = defaultShader.projectionMatrix;
+        defaultShader.projectionMatrix = this.mProjectionOrthoMatrix;
+        Matrix.setIdentityM(defaultShader.viewMatrix, 0);
+        this.renderRenderInScreenSpaceList(defaultShader); 
         
-        mProjectionMatrix = tmp;
+        defaultShader.projectionMatrix = tmp;
        
-        this.renderText();
+        this.renderText(defaultShader);
         
         this.mBmpFont.resetTextBuffer();    
         
         if (this.useShadowVolume)
-        	renderShadowVolumeScene(scene);
+        	renderShadowVolumeScene(scene,defaultShader);
         
 	}
 	
-	public void renderText()
+	public void renderText(Sd3dShader shader)
 	{
 		if (this.mBmpFont.mTextureName == 0)
 			this.registerFontMaterial();
@@ -1435,47 +1190,47 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		if (this.mBmpFont.mMesh[0].mVertices.position() != 0)
 		{			
 			//OpenGL stuffs	
-			Matrix.setIdentityM(mModelMatrix, 0);
-			Matrix.setIdentityM(mViewMatrix, 0);
+			Matrix.setIdentityM(shader.modelMatrix, 0);
+			Matrix.setIdentityM(shader.viewMatrix, 0);
 			
-			mRenderStateVector.put(2, 0);//NO LIGHT	
-			mRenderStateVector.put(1, 1);//HAS COLOR
-			mRenderStateVector.put(0, 1);//HAS TEXTURE
+			shader.renderStateVector.put(2, 0);//NO LIGHT	
+			shader.renderStateVector.put(1, 1);//HAS COLOR
+			shader.renderStateVector.put(0, 1);//HAS TEXTURE
 			
 		    // This multiplies the view matrix by the model matrix, and stores the result in the MVP matrix
 		    // (which currently contains model * view).
-		    Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0);
+		    Matrix.multiplyMM(shader.MVMatrix, 0, shader.viewMatrix, 0, shader.modelMatrix, 0);
 		 
 		    // This multiplies the modelview matrix by the projection matrix, and stores the result in the MVP matrix
 		    // (which now contains model * view * projection).
-		    Matrix.multiplyMM(mMVPMatrix, 0, mProjectionOrthoMatrix, 0, mMVMatrix, 0);		
+		    Matrix.multiplyMM(shader.MVPMatrix, 0, mProjectionOrthoMatrix, 0, shader.MVMatrix, 0);		
 		    
-		    GLES20.glUseProgram(this.mDefaultShaderProgramHandle);
+		    shader.bind();
 		    
-		    GLES20.glUniformMatrix4fv(mMVMatrixHandle, 1, false, mMVMatrix, 0);
-		    GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mMVPMatrix, 0);
-		    GLES20.glUniform4iv(mRenderStateVectorHandle, 1, mRenderStateVector);			
+		    GLES20.glUniformMatrix4fv(shader.getMVMatrixHandle(), 1, false, shader.MVMatrix, 0);
+		    GLES20.glUniformMatrix4fv(shader.getMVPMatrixHandle(), 1, false, shader.MVPMatrix, 0);
+		    GLES20.glUniform4iv(shader.getRenderStateVectorHandle(), 1, shader.renderStateVector);			
 			
 			//GLES20.glEnable (GL11.GL_BLEND);
 			//GLES20.glBlendFunc (GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);			
 			
 			
-			GLES20.glVertexAttribPointer(this.vertexPositionHandle, 3, GLES20.GL_FLOAT, false, 0, this.mBmpFont.getBbVertices());
-			GLES20.glEnableVertexAttribArray(vertexPositionHandle);
+			GLES20.glVertexAttribPointer(Sd3dShader.vertexPositionHandle, 3, GLES20.GL_FLOAT, false, 0, this.mBmpFont.getBbVertices());
+			GLES20.glEnableVertexAttribArray(Sd3dShader.vertexPositionHandle);
 			
-			GLES20.glVertexAttribPointer(this.vertexTexCoordHandle, 2, GLES20.GL_FLOAT, false, 0, this.mBmpFont.getTexCoords());
-			GLES20.glEnableVertexAttribArray(vertexTexCoordHandle);
+			GLES20.glVertexAttribPointer(Sd3dShader.vertexTexCoordHandle, 2, GLES20.GL_FLOAT, false, 0, this.mBmpFont.getTexCoords());
+			GLES20.glEnableVertexAttribArray(Sd3dShader.vertexTexCoordHandle);
 
-			GLES20.glVertexAttribPointer(this.vertexColorHandle, 4, GLES20.GL_FLOAT, false, 0, this.mBmpFont.getColors());
-			GLES20.glEnableVertexAttribArray(vertexColorHandle);
+			GLES20.glVertexAttribPointer(Sd3dShader.vertexColorHandle, 4, GLES20.GL_FLOAT, false, 0, this.mBmpFont.getColors());
+			GLES20.glEnableVertexAttribArray(Sd3dShader.vertexColorHandle);
 			
 			GLES20.glBindTexture(GL11.GL_TEXTURE_2D, this.mBmpFont.mTextureName);
 			
 			GLES20.glDrawElements(GL11.GL_TRIANGLES, this.mBmpFont.mMesh[0].mIndices.position(),GL11.GL_UNSIGNED_SHORT, this.mBmpFont.getIndices());	
 			
-			GLES20.glDisableVertexAttribArray(vertexPositionHandle);
-			GLES20.glDisableVertexAttribArray(vertexTexCoordHandle);
-			GLES20.glDisableVertexAttribArray(vertexColorHandle);
+			GLES20.glDisableVertexAttribArray(Sd3dShader.vertexPositionHandle);
+			GLES20.glDisableVertexAttribArray(Sd3dShader.vertexTexCoordHandle);
+			GLES20.glDisableVertexAttribArray(Sd3dShader.vertexColorHandle);
 			
 			//GLES20.glDisable (GL11.GL_BLEND);
 		}		
@@ -1615,7 +1370,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
         final float near = 1.5f;
         final float far = 1000.0f;
      
-        Matrix.frustumM(mProjectionMatrix, 0, left, right, bottom, top, near, far);    	
+        Matrix.frustumM(defaultShader.projectionMatrix, 0, left, right, bottom, top, near, far);    	
         
         Log.d("Sd3dRendererGl20",this.screenWidth+" "+this.screenHeight);
         Matrix.orthoM(mProjectionOrthoMatrix, 0, 0, this.screenWidth, this.screenHeight, 0, -1, 1);
@@ -1648,29 +1403,9 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
     		Log.e("Sd3d","Warning expected shader file : "+"shaders/default_fs.gl"+" not present in <asset> folder.");    		
     	}
     	
-    	this.mDefaultFragmentShaderHandle = 0;
-    	this.mDefaultShaderProgramHandle = 0;
-    	this.mDefaultVertexShaderHandle = 0;
     	
- 		if (GLES20.glGetError() != GLES20.GL_NO_ERROR)
- 		{
- 			throw new RuntimeException("surfaceCreated() ENTERING: ERROR ON OPENGL ES CALL");
- 		}    	
-    	
-         //Initialization of the default shaders
-         this.initDefaultShaders();
-         
-  		if (GLES20.glGetError() != GLES20.GL_NO_ERROR)
-  		{
-  			throw new RuntimeException("surfaceCreated() AFTER initDefaultShaders(): ERROR ON OPENGL ES CALL");
-  		}            
-         
-         this.initShaderAttributes();
-         
- 		if (GLES20.glGetError() != GLES20.GL_NO_ERROR)
- 		{
- 			throw new RuntimeException("surfaceCreated() EXITING: ERROR ON OPENGL ES CALL");
- 		}
+    	defaultShader = new Sd3dShader(this.vertexShader,this.fragmentShader);
+    	defaultShader.register();
  		
  		GameHolder.mGame.invalidateRenderElements = true;
     }	
@@ -1774,7 +1509,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
     //private float proj[] = new float[16];
     //private float modl[] = new float[16];
     private int[] mViewport = new int[16];	
-	private void updateFrustumFaster()
+	private void updateFrustumFaster(Sd3dShader shader)
 	{
 
 	    float t;
@@ -1790,25 +1525,25 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	    // Combine The Two Matrices (Multiply Projection By Modelview)
 	    // But Keep In Mind This Function Will Only Work If You Do NOT
 	    // Rotate Or Translate Your Projection Matrix
-	    clip[ 0] = this.mViewMatrix[ 0] * this.mProjectionMatrix[ 0];
-	    clip[ 1] = this.mViewMatrix[ 1] * this.mProjectionMatrix[ 5];
-	    clip[ 2] = this.mViewMatrix[ 2] * this.mProjectionMatrix[10] + this.mViewMatrix[ 3] * this.mProjectionMatrix[14];
-	    clip[ 3] = this.mViewMatrix[ 2] * this.mProjectionMatrix[11];
+	    clip[ 0] = shader.viewMatrix[ 0] * shader.projectionMatrix[ 0];
+	    clip[ 1] = shader.viewMatrix[ 1] * shader.projectionMatrix[ 5];
+	    clip[ 2] = shader.viewMatrix[ 2] * shader.projectionMatrix[10] + shader.viewMatrix[ 3] * shader.projectionMatrix[14];
+	    clip[ 3] = shader.viewMatrix[ 2] * shader.projectionMatrix[11];
 	 
-	    clip[ 4] = this.mViewMatrix[ 4] * this.mProjectionMatrix[ 0];
-	    clip[ 5] = this.mViewMatrix[ 5] * this.mProjectionMatrix[ 5];
-	    clip[ 6] = this.mViewMatrix[ 6] * this.mProjectionMatrix[10] + this.mViewMatrix[ 7] * this.mProjectionMatrix[14];
-	    clip[ 7] = this.mViewMatrix[ 6] * this.mProjectionMatrix[11];
+	    clip[ 4] = shader.viewMatrix[ 4] * shader.projectionMatrix[ 0];
+	    clip[ 5] = shader.viewMatrix[ 5] * shader.projectionMatrix[ 5];
+	    clip[ 6] = shader.viewMatrix[ 6] * shader.projectionMatrix[10] + shader.viewMatrix[ 7] * shader.projectionMatrix[14];
+	    clip[ 7] = shader.viewMatrix[ 6] * shader.projectionMatrix[11];
 	 
-	    clip[ 8] = this.mViewMatrix[ 8] * this.mProjectionMatrix[ 0];
-	    clip[ 9] = this.mViewMatrix[ 9] * this.mProjectionMatrix[ 5];
-	    clip[10] = this.mViewMatrix[10] * this.mProjectionMatrix[10] + this.mViewMatrix[11] * this.mProjectionMatrix[14];
-	    clip[11] = this.mViewMatrix[10] * this.mProjectionMatrix[11];
+	    clip[ 8] = shader.viewMatrix[ 8] * shader.projectionMatrix[ 0];
+	    clip[ 9] = shader.viewMatrix[ 9] * shader.projectionMatrix[ 5];
+	    clip[10] = shader.viewMatrix[10] * shader.projectionMatrix[10] + shader.viewMatrix[11] * shader.projectionMatrix[14];
+	    clip[11] = shader.viewMatrix[10] * shader.projectionMatrix[11];
 	 
-	    clip[12] = this.mViewMatrix[12] * this.mProjectionMatrix[ 0];
-	    clip[13] = this.mViewMatrix[13] * this.mProjectionMatrix[ 5];
-	    clip[14] = this.mViewMatrix[14] * this.mProjectionMatrix[10] + this.mViewMatrix[15] * this.mProjectionMatrix[14];
-	    clip[15] = this.mViewMatrix[14] * this.mProjectionMatrix[11];
+	    clip[12] = shader.viewMatrix[12] * shader.projectionMatrix[ 0];
+	    clip[13] = shader.viewMatrix[13] * shader.projectionMatrix[ 5];
+	    clip[14] = shader.viewMatrix[14] * shader.projectionMatrix[10] + shader.viewMatrix[15] * shader.projectionMatrix[14];
+	    clip[15] = shader.viewMatrix[14] * shader.projectionMatrix[11];
 	 
 	    // Extract The Numbers For The RIGHT Plane
 	    m_Frustum[0][0] = clip[ 3] - clip[ 0];
@@ -1908,7 +1643,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	
 	public void pointToScreen(float x,float y,float z,float res[])
 	{
-		GLU.gluProject(x, y, z, this.mViewMatrix, 0, this.mProjectionMatrix, 0, this.mViewport, 0, res, 0);
+		GLU.gluProject(x, y, z, defaultShader.viewMatrix, 0, defaultShader.projectionMatrix, 0, this.mViewport, 0, res, 0);
 	}
 	
 	public void displayText(String text,Sd3dRenderer.ALIGN halign, Sd3dRenderer.ALIGN valign, float size)
