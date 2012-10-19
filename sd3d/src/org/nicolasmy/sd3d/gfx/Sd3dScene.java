@@ -1,5 +1,7 @@
 package org.nicolasmy.sd3d.gfx;
 
+import java.util.ArrayList;
+
 
 public class Sd3dScene
 {
@@ -52,6 +54,9 @@ public class Sd3dScene
 	private int mMaxObject;
 	public int mCountObject;	
 	private int mTriangleCount;	
+	private Sd3dLight ambientLight;
+	private ArrayList<Sd3dLight> directionLight = new ArrayList<Sd3dLight>();
+	private ArrayList<Sd3dLight> positionLight = new ArrayList<Sd3dLight>();
 	
 	public Sd3dScene(int maxObject)
 	{
@@ -73,8 +78,25 @@ public class Sd3dScene
 		return this.mCamera;
 	}
 	
+	public void addLight(Sd3dLight light)
+	{
+		switch (light.getLighType())
+		{
+			case AMBIENT : 
+				this.setAmbientLight(light);
+				break; 
+			case DIRECTION : 
+				this.addDirectionLight(light);
+				break;
+			case POINT : 
+				this.addPointLight(light);
+				break;
+		}
+	}
+	
 	public void addObject(Sd3dObject object)
 	{
+
 		if (mCountObject < mMaxObject)
 		{
 			mObjectList[mCountObject] = object;
@@ -103,5 +125,41 @@ public class Sd3dScene
 	{
 		mCountObject = 0;
 		mTriangleCount = 0;
+		this.directionLight.clear();
+		this.positionLight.clear();
+	}
+
+	public Sd3dLight getAmbientLight() {
+		return ambientLight;
+	}
+
+	public void setAmbientLight(Sd3dLight ambientLight) {
+		this.ambientLight = ambientLight;
+	}
+
+	public ArrayList<Sd3dLight> getDirectionLight() {
+		return directionLight;
+	}
+
+	public void addDirectionLight(Sd3dLight directionLight)
+	{
+		this.directionLight.add(directionLight);
+	}
+	
+	public void addPointLight(Sd3dLight positionLight)
+	{
+		this.positionLight.add(positionLight);
+	}
+	
+	public void setDirectionLight(ArrayList<Sd3dLight> directionLight) {
+		this.directionLight = directionLight;
+	}
+
+	public ArrayList<Sd3dLight> getPositionLight() {
+		return positionLight;
+	}
+
+	public void setPositionLight(ArrayList<Sd3dLight> positionLight) {
+		this.positionLight = positionLight;
 	}
 }

@@ -56,6 +56,34 @@ public class Sd3dShader {
 	private int mShadowTextureMatrixHandle;	
 	private int mColorVectorHandle;
 	private int mRenderStateVectorHandle;	
+	public int getLightDirHandle() {
+		return mLightDirHandle;
+	}
+
+	public void setLightDirHandle(int lightDirHandle) {
+		this.mLightDirHandle = lightDirHandle;
+	}
+
+	public int getLightPosHandle() {
+		return mLightPosHandle;
+	}
+
+	public void setLightPosHandle(int lightPosHandle) {
+		this.mLightPosHandle = lightPosHandle;
+	}
+
+	public int getLightAmbientHandle() {
+		return mLightAmbientHandle;
+	}
+
+	public void setLightAmbientHandle(int lightAmbientHandle) {
+		this.mLightAmbientHandle = lightAmbientHandle;
+	}
+
+
+	private int mLightDirHandle;
+	private int mLightPosHandle;
+	private int mLightAmbientHandle;
 	/** This will be used to pass in model position information. */
 	//private int mPositionHandle;
 	
@@ -85,7 +113,7 @@ public class Sd3dShader {
 	
 	public void bind()
 	{
-    	GLES20.glUseProgram(mProgramHandle);		
+    	GLES20.glUseProgram(mProgramHandle);
 	}
 	
 	public void unbind()
@@ -155,7 +183,13 @@ public class Sd3dShader {
 		    
 		    mRenderStateVectorHandle = GLES20.glGetUniformLocation(mProgramHandle, "u_RenderStateVector");	
 		    
-		    mColorVectorHandle = GLES20.glGetUniformLocation(mProgramHandle, "u_ColorVector");	
+		    mColorVectorHandle = GLES20.glGetUniformLocation(mProgramHandle, "u_ColorVector");
+		    
+		    mLightDirHandle = GLES20.glGetUniformLocation(mProgramHandle, "u_LightDir");
+		    
+		    mLightPosHandle = GLES20.glGetUniformLocation(mProgramHandle, "u_LightPos");
+		    
+		    mLightAmbientHandle = GLES20.glGetUniformLocation(mProgramHandle, "u_LightAmbient");
 		    
 			if (GLES20.glGetError() != GLES20.GL_NO_ERROR)
 			{

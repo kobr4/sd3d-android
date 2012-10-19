@@ -4,12 +4,15 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
 
 import javax.microedition.khronos.egl.EGL11;
 import javax.microedition.khronos.opengles.GL11;
 
 import org.nicolasmy.sd3d.GameHolder;
 import org.nicolasmy.sd3d.Sd3dConfig;
+import org.nicolasmy.sd3d.gfx.Sd3dLight;
+import org.nicolasmy.sd3d.gfx.Sd3dLight.LightType;
 import org.nicolasmy.sd3d.gfx.Sd3dMaterial;
 import org.nicolasmy.sd3d.gfx.Sd3dMesh;
 import org.nicolasmy.sd3d.gfx.Sd3dObject;
@@ -35,10 +38,12 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		CENTER
 	}
 	
-	private boolean useShadowVolume = true;
+	private boolean useShadowVolume = false;
 	private boolean useShadowMapping = false;
+	private boolean useMultisampling = false;
 	private boolean clearScreen = true;
 	private Sd3dShadowMapping shadowMapping;
+	private Sd3dSampling sampling;
 	private String vertexShader;
 	private String fragmentShader;
 	private Sd3dShader defaultShader;
@@ -100,6 +105,9 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		
 		if ((""+Sd3dConfig.getString("clear_screen")).equals("false"))
 			this.clearScreen = false;				
+		
+		if (! Sd3dConfig.getString("sampling_ratio").equals("1.0"))
+			this.useMultisampling = true;
 	}
 	
 	
@@ -654,10 +662,11 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		
 	    // This multiplies the modelview matrix by the projection matrix, and stores the result in the MVP matrix
 	    // (which now contains model * view * projection).
+		//System.arraycopy(shader.projectionMatrix, 0, this.defaultShader.projectionMatrix, 0, 16);
+		System.arraycopy(this.defaultShader.projectionMatrix, 0, shader.projectionMatrix, 0, 16);
+		
 	    Matrix.multiplyMM(shader.MVPMatrix, 0, shader.projectionMatrix, 0, shader.MVMatrix, 0);	
 	    
-
-	
 	    GLES20.glUniformMatrix4fv(shader.getMVPMatrixHandle(), 1, false, shader.MVPMatrix, 0);
 	    	
 		
@@ -1009,10 +1018,13 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		}
 	}	
 	
-	public void renderRenderList(Sd3dShader shader)
+	public void renderRenderList(Sd3dShader shader,int lightPass)
 	{
 		for (int i = 0; i < mCountRenderElement;i++)
 		{
+			//if ((lightPass > 0)&&(!mRenderList[i].mRenderLight)) 
+			//		continue;
+			
 			if ((!mRenderList[i].mIsShadowVolume)&&(!mRenderList[i].mIsInScreenSpace))
 			  renderRenderElement(mRenderList[i],shader);
 		}
@@ -1077,7 +1089,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	}
 	
 
-	public void renderSceneFromLightPOV(Sd3dScene scene,Sd3dShader shader)
+	private void renderSceneFromLightPOV(Sd3dLight light, Sd3dScene scene,Sd3dShader shader)
 	{
 		GLES20.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		/*
@@ -1089,80 +1101,160 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
         GLES20.glFrontFace(GL11.GL_CW);
  
 		Matrix.setLookAtM(shader.viewMatrix, 0, 
-				scene.getCamera().getPosition()[0] + 10, scene.getCamera().getPosition()[1] + 10, scene.getCamera().getPosition()[2] + 10, 
+				scene.getCamera().getPosition()[0] - light.getPosition()[0], scene.getCamera().getPosition()[1] - light.getPosition()[1], scene.getCamera().getPosition()[2] - light.getPosition()[2], 
 				scene.getCamera().getPosition()[0], scene.getCamera().getPosition()[1], scene.getCamera().getPosition()[2], 
 				0, 1, 0);
         
         renderRenderListToDepth(shader);	
 	}
 	
+	private ArrayList<Sd3dLight> lightList = new ArrayList<Sd3dLight>();
 	public void renderScene(Sd3dScene scene)
 	{
+		
+		
 		if ((shadowMapping == null)&&(this.useShadowMapping))
 		{
 			shadowMapping = new Sd3dShadowMapping();
 			shadowMapping.init(this.screenWidth,this.screenHeight);
 		}
+		if ((sampling == null)&&(this.useMultisampling))
+		{
+			sampling = new Sd3dSampling();
+			sampling.init(screenWidth, screenHeight);
+		}
 		
-
 		mCountRenderElement = 0;
 		for (int i = 0;i < scene.mCountObject;i++)
 		{
 			this.addObjectToRenderList(scene.mObjectList[i]);
 		}		
 		
-		if (this.useShadowMapping)
-		{
-			shadowMapping.onRenderToDepthTexture();
-			this.renderSceneFromLightPOV(scene,this.shadowMapping.shader);
-			shadowMapping.onRenderToScreen(screenWidth,screenHeight);
-		}
-
-
-		defaultShader.bind();
-		
-		GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		
 		if (this.clearScreen)
 			GLES20.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		else
-			GLES20.glClear(GL11.GL_DEPTH_BUFFER_BIT);
-        GLES20.glFrontFace(GL11.GL_CW);
-        GLES20.glCullFace(GL11.GL_BACK);
-
-		Matrix.setIdentityM(defaultShader.viewMatrix, 0);
-       
-		if (scene.getCamera().getRotationMatrix() == null)
+			GLES20.glClear(GL11.GL_DEPTH_BUFFER_BIT);		
+		
+		lightList.clear();
+		lightList.addAll(scene.getDirectionLight());
+		lightList.addAll(scene.getPositionLight());
+		int lightPass = 0;
+		Log.d("sd3d","toto:"+lightList.size());
+		
+		for (Sd3dLight activeLight : lightList)
 		{
+			/*
+			if (lightPass == 0)
+			{
+				lightPass++;
+				continue;
+			}
+			*/
+			Log.d("sd3d","lightPass:"+lightPass);
+			if (this.useShadowMapping)
+			{
+				shadowMapping.onRenderToDepthTexture();
+				this.renderSceneFromLightPOV(activeLight,scene,this.shadowMapping.shader);
+				shadowMapping.onRenderToScreen(screenWidth,screenHeight);
+			}
+	
+			if (this.sampling != null)
+				this.sampling.onRenderScene();	
 			
-			float rot[] = scene.getCamera().getOrientation();           
-			Matrix.rotateM(defaultShader.viewMatrix, 0, rot[0], 1.0f, 0.0f, 0.0f);
-			Matrix.rotateM(defaultShader.viewMatrix, 0, rot[1], 0.0f, 1.0f, 0.0f);
-			Matrix.rotateM(defaultShader.viewMatrix, 0, rot[2], 0.0f, 0.0f, 1.0f);
+			defaultShader.bind();
 			
-		}
-		else
-		{
-			//mGl.glLoadMatrixf(scene.getCamera().getRotationMatrix(), 0);
+			//Only Ambient in the first pass
+			if ((lightPass == 0)&&(scene.getAmbientLight() != null))
+			{
+				float color[] = scene.getAmbientLight().getRGBA();
+				GLES20.glUniform4f(defaultShader.getLightAmbientHandle(), color[0], color[1], color[2], color[3]);
+			}
+			else
+			{
+				GLES20.glUniform4f(defaultShader.getLightAmbientHandle(), 0f, 0f, 0f, 0f);
+			}
 			
-			//GLU.gluLookAt(mGl, 0, 0, 2, 0, 0, 0, 0, 1, 0);
-			Matrix.setLookAtM(matrix, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0);
-			//Matrix.multiplyMM(mViewMatrix, 0, scene.getCamera().getRotationMatrix(), 0, matrix, 0);
-			Matrix.multiplyMM(defaultShader.viewMatrix, 0, scene.getCamera().getRotationMatrix(), 0, matrix, 0);
-		}
+			if (defaultShader.getLightDirHandle() != -1)
+			{
+				if (activeLight.getLighType() == LightType.DIRECTION)
+				{
+					float lightp[] = activeLight.getPosition();
+					GLES20.glUniform4f(defaultShader.getLightDirHandle(), lightp[0], lightp[1], lightp[2], 0f);
+				}
+				else
+				{
+					GLES20.glUniform4f(defaultShader.getLightDirHandle(), 0f, 0f, 0f, 0f);
+				}
+			}
 			
-		float pos[] = scene.getCamera().getPosition();
-		Matrix.translateM(defaultShader.viewMatrix, 0, -pos[0], -pos[1], -pos[2]);
+			if (defaultShader.getLightPosHandle() != -1)
+			{
+				if (activeLight.getLighType() == LightType.POINT)
+				{
+					float lightp[] = activeLight.getPosition();
+					GLES20.glUniform4f(defaultShader.getLightPosHandle(), lightp[0], lightp[1], lightp[2], lightp[3]);
+				}
+				else
+				{
+					GLES20.glUniform4f(defaultShader.getLightPosHandle(), 0f, 0f, 0f, 0f);
+				}
+			}
+			
+			
 
-        
-        //this.setupLightVector(0.f, 0.f, 0.f); 
+			
+			GLES20.glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+			
 
-        updateFrustumFaster(defaultShader);        
+	        GLES20.glFrontFace(GL11.GL_CW);
+	        GLES20.glCullFace(GL11.GL_BACK);
+	
+			Matrix.setIdentityM(defaultShader.viewMatrix, 0);
+	       
+			if (scene.getCamera().getRotationMatrix() == null)
+			{
+				
+				float rot[] = scene.getCamera().getOrientation();           
+				Matrix.rotateM(defaultShader.viewMatrix, 0, rot[0], 1.0f, 0.0f, 0.0f);
+				Matrix.rotateM(defaultShader.viewMatrix, 0, rot[1], 0.0f, 1.0f, 0.0f);
+				Matrix.rotateM(defaultShader.viewMatrix, 0, rot[2], 0.0f, 0.0f, 1.0f);
+				
+			}
+			else
+			{
+				//mGl.glLoadMatrixf(scene.getCamera().getRotationMatrix(), 0);
+				
+				//GLU.gluLookAt(mGl, 0, 0, 2, 0, 0, 0, 0, 1, 0);
+				Matrix.setLookAtM(matrix, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0);
+				//Matrix.multiplyMM(mViewMatrix, 0, scene.getCamera().getRotationMatrix(), 0, matrix, 0);
+				Matrix.multiplyMM(defaultShader.viewMatrix, 0, scene.getCamera().getRotationMatrix(), 0, matrix, 0);
+			}
+				
+			float pos[] = scene.getCamera().getPosition();
+			Matrix.translateM(defaultShader.viewMatrix, 0, -pos[0], -pos[1], -pos[2]);
+	
+	        updateFrustumFaster(defaultShader);        
+	
+	        
+	        if (lightPass > 0)
+	        {
+	        	GLES20.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+	        	GLES20.glEnable(GLES20.GL_BLEND);
+	        	GLES20.glBlendFunc(GLES20.GL_ONE,GLES20.GL_ONE);
+	        }
+	        this.renderRenderList(defaultShader,lightPass); 
+	        if (lightPass > 0)
+	        {
+	        	GLES20.glDisable(GLES20.GL_BLEND);
+	        }
+	        lightPass++;
+		}
         
-        this.renderRenderList(defaultShader);
-        
-        //drawHorizontalPlane(scene);
-        //drawShadowVolumeQuad();
+        if (this.sampling != null)
+        {
+        	this.sampling.onRenderToScreen(screenWidth, screenHeight);
+        	this.sampling.drawSampler(screenWidth, screenHeight, defaultShader);
+        }
         
         float[] tmp = defaultShader.projectionMatrix;
         defaultShader.projectionMatrix = this.mProjectionOrthoMatrix;
@@ -1213,7 +1305,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			
 			//GLES20.glEnable (GL11.GL_BLEND);
 			//GLES20.glBlendFunc (GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);			
-			
+		    GLES20.glDisable(GLES20.GL_DEPTH_TEST);
 			
 			GLES20.glVertexAttribPointer(Sd3dShader.vertexPositionHandle, 3, GLES20.GL_FLOAT, false, 0, this.mBmpFont.getBbVertices());
 			GLES20.glEnableVertexAttribArray(Sd3dShader.vertexPositionHandle);
@@ -1231,7 +1323,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			GLES20.glDisableVertexAttribArray(Sd3dShader.vertexPositionHandle);
 			GLES20.glDisableVertexAttribArray(Sd3dShader.vertexTexCoordHandle);
 			GLES20.glDisableVertexAttribArray(Sd3dShader.vertexColorHandle);
-			
+			GLES20.glEnable(GLES20.GL_DEPTH_TEST);
 			//GLES20.glDisable (GL11.GL_BLEND);
 		}		
 	}

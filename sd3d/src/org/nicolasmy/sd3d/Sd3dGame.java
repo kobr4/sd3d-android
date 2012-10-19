@@ -7,6 +7,7 @@ import javax.microedition.khronos.opengles.GL11;
 
 import org.nicolasmy.sd3d.Sd3dGLSurfaceView;
 import org.nicolasmy.sd3d.gfx.Sd3dLensFlareEntity;
+import org.nicolasmy.sd3d.gfx.Sd3dLight;
 import org.nicolasmy.sd3d.gfx.Sd3dObject;
 import org.nicolasmy.sd3d.gfx.Sd3dRessourceManager;
 import org.nicolasmy.sd3d.gfx.Sd3dScene;
@@ -217,6 +218,11 @@ public class Sd3dGame
 								if (mEntityList[j] instanceof Sd3dGameMobileEntity)
 									collisioner.collideAgainst((Sd3dGameMobileEntity)mEntityList[j]);
 						}
+					}
+					
+					if (mEntityList[i] instanceof Sd3dLight)
+					{
+						scene.addLight((Sd3dLight)mEntityList[i]);
 					}
 				}
 

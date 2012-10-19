@@ -654,18 +654,20 @@ public class Sd3dBmpFont extends Sd3dObject{
 	
 	public void renderText()
 	{
+		mGl.glEnable(GL11.GL_TEXTURE_2D);
 		if (mTextureName == 0)
 			registerTexture();
 		
 		if (mMesh[0].mVertices.position() != 0)
 		{
-			mGl.glEnable (GL11.GL_BLEND);
+			mGl.glDisable(GL11.GL_DEPTH_TEST);
+			//mGl.glEnable (GL11.GL_BLEND);
 			//mGl.glBlendFunc (GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_COLOR);
-			mGl.glBlendFunc (GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+			//mGl.glBlendFunc (GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 			//mGl.glEnable (GL11.GL_ALPHA_TEST);
 			//mGl.glAlphaFunc(GL11.GL_NOTEQUAL, 0.f);
 			
-			mGl.glEnable(GL11.GL_TEXTURE_2D);
+			
 			
 			
 			
@@ -703,7 +705,8 @@ public class Sd3dBmpFont extends Sd3dObject{
 			
 			//GLES20.glDeleteBuffers(1, buffer.array(), 0);
 			//mGl.glDisable (GL11.GL_ALPHA_TEST);
-			mGl.glDisable (GL11.GL_BLEND);
+			//mGl.glDisable (GL11.GL_BLEND);
+			mGl.glEnable(GL11.GL_DEPTH_TEST);
 					
 		}
 	}

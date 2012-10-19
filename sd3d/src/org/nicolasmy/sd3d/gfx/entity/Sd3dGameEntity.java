@@ -6,14 +6,12 @@ import org.nicolasmy.sd3d.gfx.Sd3dObject;
 import org.nicolasmy.sd3d.Sd3dGame;
 import org.nicolasmy.sd3d.Sd3dGame.Sd3dInputEvent;
 
-
-
 public abstract class Sd3dGameEntity
 {
 	public String mName;
 
-	public float mPosition[];
-	public float mOrientation[];
+	protected float mPosition[];
+	protected float mOrientation[];
 	
 	public boolean isCamera;
 	

@@ -94,7 +94,6 @@ public class Sd3dShadowMapping {
 		
 		// bind the generated framebuffer
 		//GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
-		
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, fb[0]);
 		
 		//GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_DEPTH_ATTACHMENT, GLES20.GL_TEXTURE_2D, renderTex[0], 0);
