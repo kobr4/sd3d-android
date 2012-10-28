@@ -2,18 +2,18 @@ package org.nicolasmy.sd3d.gfx;
 
 //import java.awt.Image;
 //import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.CharBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
+import org.nicolasmy.sd3d.utils.TargaReader;
 import org.nicolasmy.sd3d.math.Sd3dMatrix;
 
-import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 //import javax.imageio.*;
@@ -23,7 +23,7 @@ public class Sd3dMaterial
 	public ByteBuffer mTextureData;
 	public int mWidth;
 	public int mHeight;
-	public String mTextureName;
+	public int mTextureName;
 	public FloatBuffer mColors;	
 	public boolean alphaBlending;
 	public boolean alphaTest;
@@ -110,7 +110,124 @@ public class Sd3dMaterial
 	}
 	
 	
+	public void loadTGATextureFromZip(String zip, String filename)
+	{
+		try {
+			InputStream fis = Sd3dRessourceManager.getManager().getRessource(zip);
+
+			ZipInputStream zis = new ZipInputStream(fis);
+			ZipEntry e;
+			while ((e = zis.getNextEntry()) != null)
+			{
+				//System.out.println("zip entry: " + e.getName().replaceAll("/", "").replaceAll("\\\\", ""));
+				//System.out.println("zip entry: " + filename.replaceAll("/", "").replaceAll("\\\\", "") );
+				if (e.getName().toUpperCase().replaceAll("/", "").replaceAll("\\\\", "").equals(filename.toUpperCase().replaceAll("/", "").replaceAll("\\\\", "")))
+				{
+					System.out.println("Texture: "+e.getName()+" Size: "+e.getSize());
+					loadTGATexture(zis,(int)e.getSize());
+					zis.closeEntry();
+				}				
+			}
+			
+			fis.close();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}			
+	}
 	
+	public void loadTGATexture(InputStream is, int len) throws IOException
+	{
+		
+		Bitmap bmp = TargaReader.getImage(is, len);
+		//is.close();
+		
+        mTextureData = ByteBuffer.allocateDirect(bmp.getHeight() * bmp.getWidth() * 4);
+		
+		mTextureData.order(ByteOrder.BIG_ENDIAN); 
+		IntBuffer ib = mTextureData.asIntBuffer(); 
+				
+		// Convert ARGB -> RGBA 
+		
+		//for (int y = bmp.getHeight() - 1; y > -1; y--) 
+		
+			for (int x = bmp.getHeight() - 1; x >= 0; x--) 
+		{ 
+				for (int y = 0; y < bmp.getWidth(); y++) 
+			{ 
+				int pix = bmp.getPixel(y, x); 
+				//int pix = bmp.getRGB(x, bmp.getHeight() - y - 1); 
+				
+				int alpha = ((pix >> 24) & 0xFF); 
+				int red = ((pix >> 16) & 0xFF); 
+				int green = ((pix >> 8) & 0xFF); 
+				int blue = ((pix) & 0xFF); 
+
+				ib.put(red << 24 | green << 16 | blue << 8 | alpha); 
+				//ib.put(0xffffffff);
+				//ib.put(pix);
+			} 
+		} 
+			
+			
+		//mTextureData.put(mTextureData);
+		mTextureData.position(0);	
+		mWidth = bmp.getWidth();
+		mHeight = bmp.getHeight();						
+	}
+	
+	
+	public void loadTGATexture(String filename) throws IOException
+	{
+		InputStream fis = Sd3dRessourceManager.getManager().getRessource(filename);
+		
+		int len = 0;
+		int r = 0;
+		while (r != -1)
+		{
+			r = fis.read();
+			len++;
+		}
+		fis.close();
+		
+		fis = Sd3dRessourceManager.getManager().getRessource(filename);
+		Bitmap bmp = TargaReader.getImage(fis, len);
+		fis.close();
+		
+        mTextureData = ByteBuffer.allocateDirect(bmp.getHeight() * bmp.getWidth() * 4);
+		
+		mTextureData.order(ByteOrder.BIG_ENDIAN); 
+		IntBuffer ib = mTextureData.asIntBuffer(); 
+				
+		// Convert ARGB -> RGBA 
+		
+		//for (int y = bmp.getHeight() - 1; y > -1; y--) 
+		
+			for (int x = bmp.getWidth() - 1; x >= 0; x--) 
+		{ 
+				for (int y = 0; y < bmp.getHeight(); y++) 
+			{ 
+				int pix = bmp.getPixel(y, x); 
+				//int pix = bmp.getRGB(x, bmp.getHeight() - y - 1); 
+				
+				int alpha = ((pix >> 24) & 0xFF); 
+				int red = ((pix >> 16) & 0xFF); 
+				int green = ((pix >> 8) & 0xFF); 
+				int blue = ((pix) & 0xFF); 
+
+				ib.put(red << 24 | green << 16 | blue << 8 | alpha); 
+				//ib.put(0xffffffff);
+				//ib.put(pix);
+			} 
+		} 
+			
+			
+		//mTextureData.put(mTextureData);
+		mTextureData.position(0);	
+		mWidth = bmp.getWidth();
+		mHeight = bmp.getHeight();						
+		
+	}
 	
 	public void loadTexture(String filename) throws IOException
 	{

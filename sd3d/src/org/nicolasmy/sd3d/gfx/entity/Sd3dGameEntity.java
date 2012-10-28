@@ -6,6 +6,12 @@ import org.nicolasmy.sd3d.gfx.Sd3dObject;
 import org.nicolasmy.sd3d.Sd3dGame;
 import org.nicolasmy.sd3d.Sd3dGame.Sd3dInputEvent;
 
+/**
+ * Abstract class of a game entity, a game entity is an 
+ * entity able to interract (ie : receive events)
+ * @author kobr4
+ *
+ */
 public abstract class Sd3dGameEntity
 {
 	public String mName;

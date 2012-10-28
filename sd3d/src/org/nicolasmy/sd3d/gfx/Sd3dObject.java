@@ -3,7 +3,12 @@ package org.nicolasmy.sd3d.gfx;
 import org.nicolasmy.sd3d.gfx.renderer.Sd3dRendererElement;
 import org.nicolasmy.sd3d.math.Sd3dMatrix;
 
-
+/**
+ * Representation of a model mesh / data / position 
+ * Introduction hierachical rendering 
+ * @author kobr4
+ *
+ */
 public class Sd3dObject
 {
 	public Sd3dRendererElement mRenderElement[];
@@ -11,12 +16,14 @@ public class Sd3dObject
 	public Sd3dMaterial mMaterial[];
 	public int mMeshCount;
 	public float mScale;
-	public float mRotation[];
+	public float mRotation[] = new float[3];
 	public float mPosition[];
+	public float mTransformMatrix[];
 	public Sd3dMaterial pickedMaterial;
 	public Sd3dMaterial prepickedMaterial;
 	public Sd3dMaterial unpickedMaterial;	
 	public boolean mIsPickable;
+	public Sd3dObject mChild;
 	
 	
 	public static void merge(Sd3dObject objtomerge,float tx,float ty,float bx,float by)

@@ -47,6 +47,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	private String vertexShader;
 	private String fragmentShader;
 	private Sd3dShader defaultShader;
+	private Sd3dShader textureOnlyShader;
 	private float[] mProjectionOrthoMatrix = new float[16];
     
     //private boolean mTranslucentBackground;
@@ -191,19 +192,29 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		//} else mColorBufferName = 0;	
 		} else material.mColorName = 0;
 	
-		if (material.mTextureData != null)
+		if (material.mTextureName == 0)
 		{
-			GLES20.glGenTextures(1, buffer); 
-			GLES20.glBindTexture(GL11.GL_TEXTURE_2D, buffer.get(0)); 
-			//GLES20.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
-			GLES20.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA,material.mWidth, material.mHeight, 0, 
-					GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, material.mTextureData);
-			GLES20.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR); 
-			GLES20.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR); 
-			
-			
-			element.mTextureName = buffer.get(0);
+			if (material.mTextureData != null)
+			{
+				GLES20.glGenTextures(1, buffer); 
+				GLES20.glBindTexture(GL11.GL_TEXTURE_2D, buffer.get(0)); 
+				//GLES20.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
+				GLES20.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA,material.mWidth, material.mHeight, 0, 
+						GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, material.mTextureData);
+				GLES20.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR); 
+				GLES20.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR); 
+				
+				
+				element.mTextureName = buffer.get(0);
+				material.mTextureName = buffer.get(0);
+			}
 		}
+		
+		else
+		{
+			element.mTextureName = material.mTextureName;
+		}
+		
 		
 		if (GLES20.glGetError() != GLES20.GL_NO_ERROR)
 		{
@@ -235,7 +246,9 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 					regiserMesh(element[i],object.mMesh[i]);
 				if (i < object.mMaterial.length)
 				  if (object.mMaterial[i] != null)
+				  {
 					  registerMaterial(element[i],object.mMaterial[i]);	
+				  }
 		
 				element[i].mObject = object;
 				
@@ -244,6 +257,11 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 				if (element[i].mIsPickable)
 				{
 					generatePickingColor(element[i]);
+				}
+				
+				if (object.mTransformMatrix != null)
+				{
+					element[i].mTransformMatrix = object.mTransformMatrix;
 				}
 				
 				if (object.mPosition != null)
@@ -278,6 +296,14 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 				{
 					element[i].mOrientation = object.mRotation;
 				} 
+				
+				//Hierarchical objects managment
+				if (object.mChild != null)
+				{
+					Log.d("sd3d","Hierarchical objects managment allocation");
+					if (object.mChild.mRenderElement == null)
+						object.mChild.mRenderElement = createRenderElement(object.mChild);
+				}
 				
 			}
 		}
@@ -367,13 +393,14 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			element.mVertexBufferName = 0;
 		}	
 		
+		/*
 		if (element.mNormalBufferName != 0)
 		{
 			buffer[0] = element.mNormalBufferName;
 			GLES20.glDeleteBuffers(1, buffer, 0);
 			element.mNormalBufferName = 0;
 		}	
-		
+		*/
 		if (element.mIndiceBufferName != 0)
 		{
 			buffer[0] = element.mIndiceBufferName;
@@ -381,12 +408,15 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			element.mIndiceBufferName = 0;
 		}		
 		
+		/*
 		if (element.mTexCoordBufferName != 0)
 		{
 			buffer[0] = element.mTexCoordBufferName;
 			GLES20.glDeleteBuffers(1, buffer, 0);
 			element.mTexCoordBufferName = 0;
-		}				
+		}
+		
+		*/
 	}
 	
 	FloatBuffer vertexBuffer;
@@ -594,8 +624,10 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	public void renderRenderElementToDepth(Sd3dRendererElement element,Sd3dShader shader)
 	{	
 		
-		Matrix.setIdentityM(shader.modelMatrix, 0);
-		Matrix.setIdentityM(shader.normalMatrix, 0);
+		Matrix.setIdentityM(mLocalTransform, 0);
+		
+		Matrix.invertM(mTmpMatrix, 0, shader.modelMatrix, 0);
+		System.arraycopy(mTmpMatrix, 0, shader.modelMatrix, 0, 16);
 		
 		if (element.mRenderLight)
 		{				
@@ -606,20 +638,45 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		}
 
 		if (!element.mIsShadowVolume)
-		if (element.mOrientation != null)
+			if (element.mOrientation != null)
+			{
+				Sd3dRendererGl20.setRotateEulerM(shader.normalMatrix, 0, element.mOrientation[0], element.mOrientation[1], element.mOrientation[2]);
+				Matrix.multiplyMM(mTmpMatrix, 0, shader.normalMatrix, 0, mLocalTransform,0);
+				System.arraycopy(mTmpMatrix, 0, mLocalTransform, 0, 16);
+			}	
+			
+		if (element.mTransformMatrix != null)
 		{
-			Sd3dRendererGl20.setRotateEulerM(shader.normalMatrix, 0, element.mOrientation[0], element.mOrientation[1], element.mOrientation[2]);
-			Matrix.multiplyMM(shader.modelMatrix, 0, shader.normalMatrix, 0, shader.modelMatrix,0);
-		}
+			//System.arraycopy(element.mTransformMatrix, 0, shader.normalMatrix, 0, 16);
+			Matrix.multiplyMM(mTmpMatrix, 0, shader.normalMatrix, 0, element.mTransformMatrix,0);
+			System.arraycopy(mTmpMatrix, 0, shader.normalMatrix, 0, 16);
+			//System.arraycopy(element.mTransformMatrix, 0, shader.modelMatrix, 0, 16);	
+			
+			Matrix.multiplyMM(mTmpMatrix, 0, element.mTransformMatrix,0, mLocalTransform, 0);
+			System.arraycopy(mTmpMatrix, 0, mLocalTransform, 0, 16);
+		}			
 		
 		if (element.mPosition != null)
 		{
 			Matrix.setIdentityM(matrix, 0);
-			Matrix.translateM(matrix, 0, element.mPosition[0], element.mPosition[1], element.mPosition[2]);		
-			Matrix.multiplyMM(shader.modelMatrix, 0, matrix, 0, shader.modelMatrix,0);
+			Matrix.translateM(matrix, 0, element.mPosition[0], element.mPosition[1], element.mPosition[2]);	
+			
+			//Matrix.multiplyMM(mTmpMatrix, 0, matrix, 0, shader.normalMatrix,0);
+			//System.arraycopy(mTmpMatrix, 0, matrix, 0, 16);
+			
+			Matrix.multiplyMM(mTmpMatrix, 0, matrix, 0, mLocalTransform,0);
+			System.arraycopy(mTmpMatrix, 0, mLocalTransform, 0, 16);
 		}			
 		
-				
+		Matrix.invertM(mTmpMatrix, 0, mLocalTransform, 0);
+		System.arraycopy(mTmpMatrix, 0, mLocalTransform, 0, 16);			
+		
+		//Matrix.multiplyMM(mTmpMatrix, 0, shader.modelMatrix, 0, mLocalTransform,0);
+		Matrix.multiplyMM(mTmpMatrix, 0, mLocalTransform,0, shader.modelMatrix, 0);
+		System.arraycopy(mTmpMatrix, 0, shader.modelMatrix, 0, 16);		
+		
+		Matrix.invertM(mTmpMatrix, 0, shader.modelMatrix, 0);
+		System.arraycopy(mTmpMatrix, 0, shader.modelMatrix, 0, 16);						
 	
 		if (element.mIsBillboard)
 		{
@@ -705,40 +762,116 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			this.billboardEnd();
 		}			
 					
+		//Hierachical objects management
+		if ((element.mObject != null)&&(element.mObject.mChild != null)&&(element.mObject.mChild.mRenderElement != null))
+		{
+			Sd3dRendererElement elements[] = element.mObject.mChild.mRenderElement;
+			for (int i = 0; i < elements.length;i++)
+			{
+				float tmpModel[] = new float[16];
+				float tmpNormal[] = new float[16];
+				System.arraycopy(shader.modelMatrix, 0, tmpModel, 0, 16);
+				System.arraycopy(shader.normalMatrix, 0, tmpNormal, 0, 16);
 				
+				//Matrix.transposeM(mTmpMatrix, 0, shader.modelMatrix, 0);
+				//System.arraycopy(mTmpMatrix, 0, shader.modelMatrix, 0, 16);
+				
+				this.renderRenderElementToDepth(element.mObject.mChild.mRenderElement[i],shader);
+				System.arraycopy(tmpModel, 0, shader.modelMatrix, 0, 16);
+				System.arraycopy(tmpNormal, 0, shader.normalMatrix, 0, 16);				
+			}
+		}
+							
 	}	
 	
-	
+	private float mTmpMatrix[] = new float[16];
+	private float mLocalTransform[] = new float[16];
 	public void renderRenderElement(Sd3dRendererElement element,Sd3dShader shader)
-	{	
+	{
+		Matrix.setIdentityM(mLocalTransform, 0);
 		
-		Matrix.setIdentityM(shader.modelMatrix, 0);
-		Matrix.setIdentityM(shader.normalMatrix, 0);
+		Matrix.invertM(mTmpMatrix, 0, shader.modelMatrix, 0);
+		System.arraycopy(mTmpMatrix, 0, shader.modelMatrix, 0, 16);
 		
-		if (element.mRenderLight)
-		{				
-			shader.renderStateVector.put(2, 1);//LIGHT	
-		}		
-		{
-			shader.renderStateVector.put(2, 0);//NO LIGHT	
-		}
-
+		
 		if (!element.mIsShadowVolume)
+		/*
 		if (element.mOrientation != null)
 		{
 			Sd3dRendererGl20.setRotateEulerM(shader.normalMatrix, 0, element.mOrientation[0], element.mOrientation[1], element.mOrientation[2]);
 			Matrix.multiplyMM(shader.modelMatrix, 0, shader.normalMatrix, 0, shader.modelMatrix,0);
+			//System.arraycopy(mTmpMatrix, 0, shader.modelMatrix, 0, 16);
 		}
+		*/
+			if (element.mOrientation != null)
+			{
+				Sd3dRendererGl20.setRotateEulerM(shader.normalMatrix, 0, element.mOrientation[0], element.mOrientation[1], element.mOrientation[2]);
+				Matrix.multiplyMM(mTmpMatrix, 0, shader.normalMatrix, 0, mLocalTransform,0);
+				System.arraycopy(mTmpMatrix, 0, mLocalTransform, 0, 16);
+			}	
+			
+		if (element.mTransformMatrix != null)
+		{
+			//System.arraycopy(element.mTransformMatrix, 0, shader.normalMatrix, 0, 16);
+			Matrix.multiplyMM(mTmpMatrix, 0, shader.normalMatrix, 0, element.mTransformMatrix,0);
+			System.arraycopy(mTmpMatrix, 0, shader.normalMatrix, 0, 16);
+			//System.arraycopy(element.mTransformMatrix, 0, shader.modelMatrix, 0, 16);	
+			
+			Matrix.multiplyMM(mTmpMatrix, 0, element.mTransformMatrix,0, mLocalTransform, 0);
+			System.arraycopy(mTmpMatrix, 0, mLocalTransform, 0, 16);
+		}			
 		
 		if (element.mPosition != null)
 		{
 			Matrix.setIdentityM(matrix, 0);
-			Matrix.translateM(matrix, 0, element.mPosition[0], element.mPosition[1], element.mPosition[2]);		
-			Matrix.multiplyMM(shader.modelMatrix, 0, matrix, 0, shader.modelMatrix,0);
+			Matrix.translateM(matrix, 0, element.mPosition[0], element.mPosition[1], element.mPosition[2]);	
+			
+			//Matrix.multiplyMM(mTmpMatrix, 0, matrix, 0, shader.normalMatrix,0);
+			//System.arraycopy(mTmpMatrix, 0, matrix, 0, 16);
+			
+			Matrix.multiplyMM(mTmpMatrix, 0, matrix, 0, mLocalTransform,0);
+			System.arraycopy(mTmpMatrix, 0, mLocalTransform, 0, 16);
+		}	
+		/*
+		if (element.mTransformMatrix != null)
+		{
+			//System.arraycopy(element.mTransformMatrix, 0, shader.normalMatrix, 0, 16);
+			Matrix.multiplyMM(mTmpMatrix, 0, shader.normalMatrix, 0, element.mTransformMatrix,0);
+			System.arraycopy(mTmpMatrix, 0, shader.normalMatrix, 0, 16);
+			//System.arraycopy(element.mTransformMatrix, 0, shader.modelMatrix, 0, 16);	
+			
+			Matrix.multiplyMM(mTmpMatrix, 0, shader.modelMatrix, 0, element.mTransformMatrix,0);
+			System.arraycopy(mTmpMatrix, 0, shader.modelMatrix, 0, 16);
 		}			
 		
-				
+		if (element.mPosition != null)
+		{
+			Matrix.setIdentityM(matrix, 0);
+			Matrix.translateM(matrix, 0, element.mPosition[0], element.mPosition[1], element.mPosition[2]);	
+			
+			//Matrix.multiplyMM(mTmpMatrix, 0, matrix, 0, shader.normalMatrix,0);
+			//System.arraycopy(mTmpMatrix, 0, matrix, 0, 16);
+			
+			Matrix.multiplyMM(mTmpMatrix, 0, matrix, 0, shader.modelMatrix,0);
+			System.arraycopy(mTmpMatrix, 0, shader.modelMatrix, 0, 16);
+		}				
+		*/
+		
+		Matrix.invertM(mTmpMatrix, 0, mLocalTransform, 0);
+		System.arraycopy(mTmpMatrix, 0, mLocalTransform, 0, 16);			
+		
+		//Matrix.multiplyMM(mTmpMatrix, 0, shader.modelMatrix, 0, mLocalTransform,0);
+		Matrix.multiplyMM(mTmpMatrix, 0, mLocalTransform,0, shader.modelMatrix, 0);
+		System.arraycopy(mTmpMatrix, 0, shader.modelMatrix, 0, 16);		
+		
+		Matrix.invertM(mTmpMatrix, 0, shader.modelMatrix, 0);
+		System.arraycopy(mTmpMatrix, 0, shader.modelMatrix, 0, 16);		
 	
+		
+	
+		
+		
+
 		if (element.mIsBillboard)
 		{
 			this.billboardCheatSphericalBegin();
@@ -923,7 +1056,27 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			this.billboardEnd();
 		}			
 					
-		GLES20.glActiveTexture(GLES20.GL_TEXTURE0);		
+		GLES20.glActiveTexture(GLES20.GL_TEXTURE0);	
+		
+		//Hierachical objects management
+		if ((element.mObject != null)&&(element.mObject.mChild != null)&&(element.mObject.mChild.mRenderElement != null))
+		{
+			Sd3dRendererElement elements[] = element.mObject.mChild.mRenderElement;
+			for (int i = 0; i < elements.length;i++)
+			{
+				float tmpModel[] = new float[16];
+				float tmpNormal[] = new float[16];
+				System.arraycopy(shader.modelMatrix, 0, tmpModel, 0, 16);
+				System.arraycopy(shader.normalMatrix, 0, tmpNormal, 0, 16);
+				
+				//Matrix.transposeM(mTmpMatrix, 0, shader.modelMatrix, 0);
+				//System.arraycopy(mTmpMatrix, 0, shader.modelMatrix, 0, 16);
+				
+				this.renderRenderElement(element.mObject.mChild.mRenderElement[i],shader);
+				System.arraycopy(tmpModel, 0, shader.modelMatrix, 0, 16);
+				System.arraycopy(tmpNormal, 0, shader.normalMatrix, 0, 16);				
+			}
+		}	
 	}
 	
 	
@@ -1013,8 +1166,14 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	{
 		for (int i = 0; i < mCountRenderElement;i++)
 		{
+			if (mRenderList[i].mRenderLight)
 			if ((!mRenderList[i].mIsShadowVolume)&&(!mRenderList[i].mIsInScreenSpace))
+			{
+		      Matrix.setIdentityM(shader.modelMatrix, 0);
+			  Matrix.setIdentityM(shader.normalMatrix, 0);
+				
 			  renderRenderElementToDepth(mRenderList[i],shader);
+			}
 		}
 	}	
 	
@@ -1026,7 +1185,20 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			//		continue;
 			
 			if ((!mRenderList[i].mIsShadowVolume)&&(!mRenderList[i].mIsInScreenSpace))
-			  renderRenderElement(mRenderList[i],shader);
+			{
+				Matrix.setIdentityM(shader.modelMatrix, 0);
+				Matrix.setIdentityM(shader.normalMatrix, 0);
+				
+				if (mRenderList[i].mRenderLight)
+				{				
+					shader.renderStateVector.put(2, 1);//LIGHT	
+				}		
+				{
+					shader.renderStateVector.put(2, 0);//NO LIGHT	
+				}				
+				
+				renderRenderElement(mRenderList[i],shader);
+			}
 		}
 	}
 	
@@ -1100,11 +1272,20 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			*/
         GLES20.glFrontFace(GL11.GL_CW);
  
-		Matrix.setLookAtM(shader.viewMatrix, 0, 
-				scene.getCamera().getPosition()[0] - light.getPosition()[0], scene.getCamera().getPosition()[1] - light.getPosition()[1], scene.getCamera().getPosition()[2] - light.getPosition()[2], 
-				scene.getCamera().getPosition()[0], scene.getCamera().getPosition()[1], scene.getCamera().getPosition()[2], 
-				0, 1, 0);
-        
+        if (light.getLighType() == LightType.DIRECTION)
+        {
+			Matrix.setLookAtM(shader.viewMatrix, 0, 
+					scene.getCamera().getPosition()[0] - light.getPosition()[0], scene.getCamera().getPosition()[1] - light.getPosition()[1], scene.getCamera().getPosition()[2] - light.getPosition()[2], 
+					scene.getCamera().getPosition()[0], scene.getCamera().getPosition()[1], scene.getCamera().getPosition()[2], 
+					0, 1, 0);
+        }
+        else
+        {
+			Matrix.setLookAtM(shader.viewMatrix, 0, 
+					light.getPosition()[0], light.getPosition()[1], light.getPosition()[2], 
+					scene.getCamera().getPosition()[0], scene.getCamera().getPosition()[1], scene.getCamera().getPosition()[2], 
+					0, 1, 0);        	
+        }
         renderRenderListToDepth(shader);	
 	}
 	
@@ -1130,6 +1311,9 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			this.addObjectToRenderList(scene.mObjectList[i]);
 		}		
 		
+		if (this.sampling != null)
+			this.sampling.onRenderScene();			
+		
 		if (this.clearScreen)
 			GLES20.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		else
@@ -1139,7 +1323,11 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		lightList.addAll(scene.getDirectionLight());
 		lightList.addAll(scene.getPositionLight());
 		int lightPass = 0;
-		Log.d("sd3d","toto:"+lightList.size());
+		//Log.d("sd3d","toto:"+lightList.size());
+	
+		
+		// Light pass count
+		defaultShader.renderStateVector.put(3,lightList.size());
 		
 		for (Sd3dLight activeLight : lightList)
 		{
@@ -1150,7 +1338,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 				continue;
 			}
 			*/
-			Log.d("sd3d","lightPass:"+lightPass);
+			//Log.d("sd3d","lightPass:"+lightPass);
 			if (this.useShadowMapping)
 			{
 				shadowMapping.onRenderToDepthTexture();
@@ -1164,7 +1352,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			defaultShader.bind();
 			
 			//Only Ambient in the first pass
-			if ((lightPass == 0)&&(scene.getAmbientLight() != null))
+			if ((scene.getAmbientLight() != null))
 			{
 				float color[] = scene.getAmbientLight().getRGBA();
 				GLES20.glUniform4f(defaultShader.getLightAmbientHandle(), color[0], color[1], color[2], color[3]);
@@ -1192,7 +1380,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 				if (activeLight.getLighType() == LightType.POINT)
 				{
 					float lightp[] = activeLight.getPosition();
-					GLES20.glUniform4f(defaultShader.getLightPosHandle(), lightp[0], lightp[1], lightp[2], lightp[3]);
+					GLES20.glUniform4f(defaultShader.getLightPosHandle(), lightp[0], lightp[1], lightp[2], 0f);
 				}
 				else
 				{
@@ -1238,7 +1426,9 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	        
 	        if (lightPass > 0)
 	        {
-	        	GLES20.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+	        	//GLES20.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+	        	GLES20.glEnable(GL11.GL_DEPTH_TEST);
+	        	GLES20.glDepthFunc(GL11.GL_LEQUAL);
 	        	GLES20.glEnable(GLES20.GL_BLEND);
 	        	GLES20.glBlendFunc(GLES20.GL_ONE,GLES20.GL_ONE);
 	        }
@@ -1253,7 +1443,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
         if (this.sampling != null)
         {
         	this.sampling.onRenderToScreen(screenWidth, screenHeight);
-        	this.sampling.drawSampler(screenWidth, screenHeight, defaultShader);
+        	this.sampling.drawSampler(screenWidth, screenHeight, textureOnlyShader);
         }
         
         float[] tmp = defaultShader.projectionMatrix;
@@ -1263,7 +1453,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
         
         defaultShader.projectionMatrix = tmp;
        
-        this.renderText(defaultShader);
+        this.renderText(this.textureOnlyShader);
         
         this.mBmpFont.resetTextBuffer();    
         
@@ -1499,6 +1689,11 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
     	defaultShader = new Sd3dShader(this.vertexShader,this.fragmentShader);
     	defaultShader.register();
  		
+    	
+    	textureOnlyShader = new Sd3dShader(Sd3dRessourceManager.getManager().getText("shaders/textureonly_vs.gl"),
+    			Sd3dRessourceManager.getManager().getText("shaders/textureonly_fs.gl"));
+    	textureOnlyShader.register();
+    	
  		GameHolder.mGame.invalidateRenderElements = true;
     }	
     

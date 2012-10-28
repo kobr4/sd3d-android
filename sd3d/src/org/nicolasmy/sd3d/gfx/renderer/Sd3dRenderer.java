@@ -20,8 +20,12 @@ import android.opengl.GLU;
 import android.opengl.Matrix;
 import android.util.Log;
 
-
-
+/**
+ * GLES1 rendering class
+ * @author kobr4
+ *
+ */
+@Deprecated
 public class Sd3dRenderer implements Sd3dRendererInterface
 {
 	public enum ALIGN
@@ -132,6 +136,7 @@ public class Sd3dRenderer implements Sd3dRendererInterface
 			
 			
 			element.mTextureName = buffer.get(0);
+			
 		}
 		
 		return 0;
@@ -274,6 +279,7 @@ public class Sd3dRenderer implements Sd3dRendererInterface
 			element.mVertexBufferName = 0;
 		}	
 		
+		/*
 		if (element.mNormalBufferName != 0)
 		{
 			buffer[0] = element.mNormalBufferName;
@@ -293,7 +299,8 @@ public class Sd3dRenderer implements Sd3dRendererInterface
 			buffer[0] = element.mTexCoordBufferName;
 			mGl.glDeleteBuffers(1, buffer, 0);
 			element.mTexCoordBufferName = 0;
-		}				
+		}
+		*/				
 	}
 	
 	FloatBuffer vertexBuffer;
@@ -399,7 +406,7 @@ public class Sd3dRenderer implements Sd3dRendererInterface
 		}
 			
         // draw using hardware buffers    
-		
+		/*
 		if (element.mNormalBufferName != 0)
 		{
 			
@@ -417,6 +424,7 @@ public class Sd3dRenderer implements Sd3dRendererInterface
 			mGl.glTexCoordPointer(2, GL11.GL_FLOAT, 0, 0);                          
 		}
 		else mGl.glDisableClientState(GL11.GL_TEXTURE_COORD_ARRAY); 
+		*/
 		
 		//if (element.mColorBufferName != 0)
 		if (element.mObject.mMaterial[0].mColorName != 0)

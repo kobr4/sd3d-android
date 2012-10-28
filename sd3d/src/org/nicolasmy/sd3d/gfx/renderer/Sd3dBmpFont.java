@@ -1,34 +1,21 @@
 package org.nicolasmy.sd3d.gfx.renderer;
 
-//import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.CharBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
-//import javax.imageio.ImageIO;
-//import javax.media.opengl.GL2;
 
-import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.opengl.GLES20;
-
-import javax.microedition.khronos.opengles.GL10;
 import javax.microedition.khronos.opengles.GL11;
 
 import org.nicolasmy.sd3d.gfx.Sd3dMaterial;
 import org.nicolasmy.sd3d.gfx.Sd3dMesh;
 import org.nicolasmy.sd3d.gfx.Sd3dObject;
 import org.nicolasmy.sd3d.gfx.Sd3dRessourceManager;
-
-
-//import android.graphics.Bitmap;
-//import android.graphics.BitmapFactory;
 
 public class Sd3dBmpFont extends Sd3dObject{
 	private float charTexCoords[][];

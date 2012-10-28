@@ -22,12 +22,16 @@ public class Sd3dGameMobileEntity extends Sd3dGameEntity
 	{
 		mAcceleration = new float[3];
 		mVelocity = new float[3];
+		this.mOrientation = new float[3];
+		this.mPosition = new float[3];
 	}
 	
-	public Sd3dGameMobileEntity(String mesh,String texture, float scale, boolean generateShadow)
+	public Sd3dGameMobileEntity(String mesh,String texture, float scale, boolean generateShadow, boolean renderLight)
 	{
 		this(mesh,texture,scale);
 		
+		if (renderLight)
+			this.mObject.mMaterial[0].renderLight = renderLight;
 		
 		if (generateShadow)
 		{
@@ -56,7 +60,7 @@ public class Sd3dGameMobileEntity extends Sd3dGameEntity
 		mObject.mMesh[0] = new Sd3dMesh();
 		try {
 			mObject.mMesh[0].load3ds(mesh,1,0f,0f,scale);
-			mObject.mMesh[0].generateNormalsPerVertex();
+			mObject.mMesh[0].generateNormals();
 		} catch (IOException e) {
 			Log.d("Sd3dGameMobileEntity()","Error while loading mesh "+e.toString());
 		}

@@ -11,7 +11,7 @@ import org.nicolasmy.sd3d.gfx.Sd3dObject;
 public class Sd3dGameSkyBoxEntity extends Sd3dGameEntity
 {
 	Sd3dGameEntity mTargetEntity;
-	public Sd3dGameSkyBoxEntity(Sd3dGameCameraEntity targetEntity)
+	public Sd3dGameSkyBoxEntity(Sd3dGameEntity targetEntity)
 	{
 		mTargetEntity = targetEntity;
 		float one = (float)80.0;

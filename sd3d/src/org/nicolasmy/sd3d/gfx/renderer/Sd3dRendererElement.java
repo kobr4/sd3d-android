@@ -11,10 +11,10 @@ import android.opengl.GLES20;
 
 public class Sd3dRendererElement {
 	public int mVertexBufferName;
-	public int mNormalBufferName;		
+	//public int mNormalBufferName;		
 	public int mIndiceBufferName;
 	public int mIndiceCount;
-	public int mTexCoordBufferName;	
+	//public int mTexCoordBufferName;	
 	//public int mColorBufferName;
 	public int mTextureName;
 	public float mScale;
@@ -28,6 +28,7 @@ public class Sd3dRendererElement {
 	public boolean mIsPickable;
 	public boolean mIsInScreenSpace;
 	public byte mPickingColor[];
+	public float mTransformMatrix[];
 	public boolean mIsShadowVolume;
 	public Sd3dObject mObject;		
 	public Sd3dRendererElementInterface mRendererInterface;

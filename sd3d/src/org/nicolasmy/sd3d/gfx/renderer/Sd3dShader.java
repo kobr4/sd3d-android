@@ -32,6 +32,7 @@ public class Sd3dShader {
     //0 : Texture flag
     //1 : Color flag (0 : none;1 : color attrib;2 : color)
     //2 : Render light flag
+    //3 : Nb pass
     public IntBuffer renderStateVector = IntBuffer.allocate(4);
     
 	public static final int vertexPositionHandle = 1;
@@ -55,7 +56,8 @@ public class Sd3dShader {
 	/** This will be used to pass in the transformation matrix. */
 	private int mShadowTextureMatrixHandle;	
 	private int mColorVectorHandle;
-	private int mRenderStateVectorHandle;	
+	private int mRenderStateVectorHandle;
+	
 	public int getLightDirHandle() {
 		return mLightDirHandle;
 	}

@@ -482,26 +482,6 @@ public class Sd3dMesh
 		mIndices.put((char)(indice+3));
 		mIndices.put((char)indice);		
 		
-		/*
-		putQuad(x1,y1,z1,x2,y2,z2,
-				x3,y3,z3,x4,y4,z4);		
-		
-		mTexCoords.put(x1t);
-		mTexCoords.put(y1t);
-		
-		mTexCoords.put(x2t);
-		mTexCoords.put(y2t);		
-	
-		mTexCoords.put(x3t);
-		mTexCoords.put(y3t);
-		
-		mTexCoords.put(x4t);
-		mTexCoords.put(y4t);		
-		/*
-		mTexCoords.position(0);
-		mIndices.position(0);
-		mVertices.position(0);
-		*/
 	}
 	
 	public void addTexCoords(int indice,float xt,float yt)
@@ -1144,4 +1124,63 @@ public class Sd3dMesh
 		//this.mNormals.position(0);
 		this.mVertices.position(0);
 	}
+	
+	
+	/**
+	 * Apply a 3x3 matrix to mesh vertices position and normal
+	 * @param matrix
+	 */
+	public void applyMatrix(Sd3dMatrix matrix)
+	{
+		float position[] = new float[3];
+		float normal[] = new float[3];	
+		float result[] = new float[3];
+		int nbVert = this.mVertices.capacity() / Sd3dMesh.nbFloatPerVertex;
+
+		for(int i = 0;i < nbVert;i++)
+		{
+			position[0] = this.mVertices.get(i * Sd3dMesh.nbFloatPerVertex + 0);
+			position[1] = this.mVertices.get(i * Sd3dMesh.nbFloatPerVertex + 1);
+			position[2] = this.mVertices.get(i * Sd3dMesh.nbFloatPerVertex + 2);
+			
+			normal[0] = this.mVertices.get(i * Sd3dMesh.nbFloatPerVertex + 3);
+			normal[1] = this.mVertices.get(i * Sd3dMesh.nbFloatPerVertex + 4);
+			normal[2] = this.mVertices.get(i * Sd3dMesh.nbFloatPerVertex + 5);
+			
+			Sd3dMatrix.mul(result,matrix,position);
+			
+			this.mVertices.put(i * Sd3dMesh.nbFloatPerVertex + 0, result[0]);
+			this.mVertices.put(i * Sd3dMesh.nbFloatPerVertex + 1, result[1]);
+			this.mVertices.put(i * Sd3dMesh.nbFloatPerVertex + 2, result[2]);
+			
+			Sd3dMatrix.mul(result,matrix,normal);
+			
+			this.mVertices.put(i * Sd3dMesh.nbFloatPerVertex + 3, result[0]);
+			this.mVertices.put(i * Sd3dMesh.nbFloatPerVertex + 4, result[1]);
+			this.mVertices.put(i * Sd3dMesh.nbFloatPerVertex + 5, result[2]);			
+		}
+	}
+	
+	public void applyVector(float v[])
+	{
+		int nbVert = this.mVertices.capacity() / Sd3dMesh.nbFloatPerVertex;
+		float position[] = new float[3];
+		for(int i = 0;i < nbVert;i++)
+		{		
+			position[0] = this.mVertices.get(i * Sd3dMesh.nbFloatPerVertex + 0);
+			position[1] = this.mVertices.get(i * Sd3dMesh.nbFloatPerVertex + 1);
+			position[2] = this.mVertices.get(i * Sd3dMesh.nbFloatPerVertex + 2);
+			
+			position[0] += v[0];
+			position[1] += v[1];
+			position[2] += v[2];
+			
+			this.mVertices.put(i * Sd3dMesh.nbFloatPerVertex + 0, position[0]);
+			this.mVertices.put(i * Sd3dMesh.nbFloatPerVertex + 1, position[1]);
+			this.mVertices.put(i * Sd3dMesh.nbFloatPerVertex + 2, position[2]);			
+		}
+		
+		
+	}
+	
 }

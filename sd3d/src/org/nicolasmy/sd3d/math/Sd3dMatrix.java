@@ -1,5 +1,10 @@
 package org.nicolasmy.sd3d.math;
 
+/**
+ * 3x3 Matrix class, also contains some pre-computed cos and sin lookup table
+ * and other math stuff that should be put elswhere.
+ * @author kobr4
+ */
 public class Sd3dMatrix {
 	public static float cosd[];
 	public static float sind[];
@@ -9,7 +14,7 @@ public class Sd3dMatrix {
 	{
 		mT = new float[9];
 	}
-	
+	/*
 	public Sd3dMatrix(float mat[])
 	{
 		mT = new float[9];
@@ -17,6 +22,25 @@ public class Sd3dMatrix {
 		for (int i = 0;i < 9;i++)
 			mT[i] = mat[i];		
 	}
+	*/
+	
+	public Sd3dMatrix clone()
+	{
+		return new Sd3dMatrix(this.mT);
+	}
+	
+	public Sd3dMatrix(float mat[])
+	{
+		this(mat,0);
+	}	
+	
+	public Sd3dMatrix(float mat[], int offset)
+	{
+		mT = new float[9];
+		
+		for (int i = 0;i < 9;i++)
+			mT[i] = mat[i + offset];		
+	} 
 	
 	public static int init()
 	{
@@ -261,4 +285,24 @@ public class Sd3dMatrix {
 		return true;
 		
 	}	
+	
+	public static float[] convert33to44(float m33[], int offset)
+	{
+		float m44[] = new float[16];
+		
+		m44[0] = m33[0 + offset];
+		m44[1] = m33[1 + offset];
+		m44[2] = m33[2 + offset];
+		
+		m44[4] = m33[3 + offset];
+		m44[5] = m33[4 + offset];
+		m44[6] = m33[5 + offset];
+		
+		m44[8] = m33[6 + offset];
+		m44[9] = m33[7 + offset];
+		m44[10] = m33[8 + offset];		
+		
+		m44[15] = 1.0f;
+		return m44;
+	}
 }
