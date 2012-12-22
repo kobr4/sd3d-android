@@ -33,7 +33,7 @@ public class Sd3dObjectFrameAnimator
     FrameObject fo = mFrameObjectList.get(indice);
     this.mFrameIndice = indice;
     this.mCurrentDuration = fo.mDuration;
-    Log.d("sd3d","Current frame "+this.mFrameIndice);
+    //Log.d("sd3d","Current frame "+this.mFrameIndice);
   }
 
   public void processFrame(int dt)

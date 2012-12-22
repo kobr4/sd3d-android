@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 
 import org.nicolasmy.sd3d.gfx.Sd3dMaterial;
 import org.nicolasmy.sd3d.gfx.Sd3dMesh;
@@ -15,11 +16,36 @@ import org.nicolasmy.sd3d.gfx.entity.Sd3dGameAnimatedEntity;
 import org.nicolasmy.sd3d.gfx.entity.Sd3dGameMobileEntity;
 import org.nicolasmy.sd3d.importer.md3.Md3Loader;
 import org.nicolasmy.sd3d.importer.md3.Sd3dMd3LoaderAdapter;
+import org.nicolasmy.sd3d.importer.obj.ObjLoader;
+import org.nicolasmy.sd3d.importer.obj.Sd3dObjLoaderAdapter;
 import org.nicolasmy.sd3d.math.Sd3dMatrix;
 
 import android.util.Log;
 
 public class Sd3dGameEntityFactory {
+	public static Sd3dGameMobileEntity fromFile(String filename, String texture) throws IOException {
+		Sd3dGameMobileEntity entity = new Sd3dGameMobileEntity();
+		Sd3dObject obj = new Sd3dObject();
+		obj.mMesh = new Sd3dMesh[1];
+		if (filename.toUpperCase(Locale.getDefault()).endsWith(".OBJ")) {
+			Sd3dObjLoaderAdapter adapter = new Sd3dObjLoaderAdapter();
+			ObjLoader objLoader = new ObjLoader(adapter);
+			objLoader.forwardCountFromStream(Sd3dRessourceManager.getManager().getRessource(filename));
+			objLoader.loadFromFile(Sd3dRessourceManager.getManager().getRessource(filename));
+			
+			obj.mMesh[0] =  adapter.getMesh();
+		} else if (filename.toUpperCase(Locale.getDefault()).endsWith(".3DS")) {
+			obj.mMesh[0] = new Sd3dMesh();
+			obj.mMesh[0].loadFromFile(filename);
+		}
+		
+		
+		obj.mMaterial = new Sd3dMaterial[1];
+		obj.mMaterial[0] = Sd3dMaterialFactory.fromFile(texture);		
+		entity.setObject(obj);
+		return entity;		
+	}
+	
 	private static Sd3dGameMobileEntity buildMobile(HashMap map)
 	{
 		Sd3dGameMobileEntity entity = new Sd3dGameMobileEntity();
@@ -49,7 +75,6 @@ public class Sd3dGameEntityFactory {
 		
 		Md3Loader md3loader = new Md3Loader();
 		Sd3dMatrix rotationMatrix = Sd3dMatrix.getRotationMatrix(-90f, 0f, 0f);
-		Sd3dMatrix transformMatrix;
 		InputStream is;
 		
 		try {
@@ -78,7 +103,7 @@ public class Sd3dGameEntityFactory {
 				
 				for (int j = 0;j < surfaceList.size();j++)
 				{
-					transformMatrix = rotationMatrix.clone();
+					//transformMatrix = rotationMatrix.clone();
 					entity.mObject.mMesh[i] = surfaceList.get(j).get(0).mMesh[0];
 					entity.mObject.mMaterial[i] = surfaceList.get(j).get(0).mMaterial[0];
 					/*

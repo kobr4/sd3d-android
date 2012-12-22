@@ -120,11 +120,19 @@ public class EglHelper {
         	Log.d("createSurface()","ERROR FAILED TO CREATE SURFACE");
         }       
         
-
-        //int attrlist[] = {EGL10.EGL_WIDTH,1280,EGL10.EGL_HEIGHT,1280,EGL10.EGL_NONE};
+/*
+        int attrlist[] = {EGL10.EGL_WIDTH,512,EGL10.EGL_HEIGHT,512,EGL10.EGL_NONE};
         //int attrlist[] = {};
-//        mEGLPickingSurface = mEgl.eglCreatePbufferSurface(mEglDisplay, mEglConfig,  attrlist);
+        //int[] attrlist = new int[]{EGL_CONTEXT_CLIENT_VERSION, 2,EGL10.EGL_NONE};
+        mEGLPickingSurface = mEgl.eglCreatePbufferSurface(mEglDisplay, mEglConfig,  attrlist);
         
+        int error = mEgl.eglGetError();
+        if (error != EGL10.EGL_SUCCESS)
+        {
+        	Log.e("createSurface()","ERROR SETTING CONTEXT ERROR CODE="+error);
+        	
+        }        
+  */      
         /*
          * Before we can issue GL commands, we need to make sure
          * the context is current and bound to a surface.
@@ -140,22 +148,20 @@ public class EglHelper {
         }
         
         GL11 gl = (GL11)mEglContext.getGL();
-        /*
-        if (mGLWrapper != null) {
-            gl = mGLWrapper.wrap(gl);
-        }
-        */
+
         return gl;
     }
 
     public GL11 makePickCurrent()
     {
-    	//Log.d("makePickCurrent()", "Making the picking pixel buffer the current context");
-        boolean res = mEgl.eglMakeCurrent(mEglDisplay, mEGLPickingSurface, mEGLPickingSurface,
+    	Log.d("makePickCurrent()", "Making the picking pixel buffer the current context");
+        
+    	boolean res = mEgl.eglMakeCurrent(mEglDisplay, mEGLPickingSurface, mEGLPickingSurface,
                 mEglContext);
         
-        //Log.d("makePickCurrent()","RESULT= "+res);
+        Log.d("makePickCurrent()","RESULT= "+res);
        
+        
         return (GL11)mEglContext.getGL();
     }
     
@@ -172,8 +178,12 @@ public class EglHelper {
      */
     public boolean swap() {
         mEgl.eglSwapBuffers(mEglDisplay, mEglSurface);
-    	//mEgl.eglSwapBuffers(mEglDisplay, mEGLPickingSurface);
-       
+    	/*
+        boolean b = mEgl.eglSwapBuffers(mEglDisplay, mEGLPickingSurface);
+       if (b == false){
+    	   Log.e("swap()","Failure to swap !");
+       }
+       */
         
         /*
          * Always check for EGL_CONTEXT_LOST, which means the context

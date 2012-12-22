@@ -228,9 +228,9 @@ public class Sd3dMesh
 		Sd3dVector vf = new Sd3dVector();
 		for (int i = 0; i < this.mIndices.capacity(); i=i+3)
 		{
-			char a = (char) (mIndices.get(i));
-			char b = (char) (mIndices.get(i+1));
-			char c = (char) (mIndices.get(i+2));
+			int a = (int) (mIndices.get(i));
+			int b = (int) (mIndices.get(i+1));
+			int c = (int) (mIndices.get(i+2));
 			
 			v0.setFromVertice(mVertices, a);
 			v1.setFromVertice(mVertices, b);
@@ -324,9 +324,9 @@ public class Sd3dMesh
 		
 		for (int i = 0; i < this.mIndices.capacity(); i=i+3)
 		{
-			char a = (char) (mIndices.get(i));
-			char b = (char) (mIndices.get(i+1));
-			char c = (char) (mIndices.get(i+2));
+			int a = (int) (mIndices.get(i));
+			int b = (int) (mIndices.get(i+1));
+			int c = (int) (mIndices.get(i+2));
 			
 			v0.setFromVertice(mVertices, a);
 			v1.setFromVertice(mVertices, b);
@@ -396,6 +396,8 @@ public class Sd3dMesh
 											mVertices.get(b*nbFloatPerVertex), mVertices.get(b*nbFloatPerVertex+1), mVertices.get(b*nbFloatPerVertex+2), 
 											vt2p.get(0), vt2p.get(1), vt2p.get(2));									
 		
+
+									
 									shadowMesh.putTriangle( vt2p.get(0), vt2p.get(1), vt2p.get(2),
 											vt1p.get(0), vt1p.get(1), vt1p.get(2),
 											mVertices.get(a*nbFloatPerVertex), mVertices.get(a*nbFloatPerVertex+1), mVertices.get(a*nbFloatPerVertex+2));										
@@ -507,7 +509,12 @@ public class Sd3dMesh
 			float x2,float y2,float z2,
 			float x3,float y3,float z3)
 	{
+		//System.out.println("A= "+x1+" "+y1+" "+z1);
+		//System.out.println("B= "+x2+" "+y2+" "+z2);
+		//System.out.println("C= "+x3+" "+y3+" "+z3);
+		
 		int indice = mVertices.position()/Sd3dMesh.nbFloatPerVertex;
+		//int indice = mVertices.position();
 		mVertices.put(x1);
 		mVertices.put(y1);
 		mVertices.put(z1);
@@ -890,13 +897,13 @@ public class Sd3dMesh
 			{
 				char indice2 = mIndices.get(j);
 				
-				float x = mVertices.get(indice * 3);
-				float y = mVertices.get(indice * 3 + 1);
-				float z = mVertices.get(indice * 3 + 2);
+				float x = mVertices.get(indice * Sd3dMesh.nbFloatPerVertex);
+				float y = mVertices.get(indice * Sd3dMesh.nbFloatPerVertex + 1);
+				float z = mVertices.get(indice * Sd3dMesh.nbFloatPerVertex + 2);
 				
-				float x2 = mVertices.get(indice2 * 3);
-				float y2 = mVertices.get(indice2 * 3 + 1);
-				float z2 = mVertices.get(indice2 * 3 + 2);
+				float x2 = mVertices.get(indice2 * Sd3dMesh.nbFloatPerVertex);
+				float y2 = mVertices.get(indice2 * Sd3dMesh.nbFloatPerVertex + 1);
+				float z2 = mVertices.get(indice2 * Sd3dMesh.nbFloatPerVertex + 2);
 				
 				if ((x == x2)&&(y==y2)&&(z==z2))
 				{

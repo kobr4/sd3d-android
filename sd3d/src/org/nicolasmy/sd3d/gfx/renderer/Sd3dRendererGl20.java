@@ -48,6 +48,9 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	private String fragmentShader;
 	private Sd3dShader defaultShader;
 	private Sd3dShader textureOnlyShader;
+	private Sd3dShader colorOnlyShader;
+	private Sd3dShader pickingShader = null;
+	private Sd3dFrameBuffer pickingFrameBuffer = null;
 	private float[] mProjectionOrthoMatrix = new float[16];
     
     //private boolean mTranslucentBackground;
@@ -474,6 +477,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	 
 	    // This multiplies the modelview matrix by the projection matrix, and stores the result in the MVP matrix
 	    // (which now contains model * view * projection).
+		Matrix.orthoM(shader.projectionOrthoMatrix, 0, 0, this.screenWidth, this.screenHeight, 0, -1, 1);
 	    Matrix.multiplyMM(shader.MVPMatrix, 0, shader.projectionOrthoMatrix, 0, shader.modelMatrix, 0);			
 	  
 
@@ -680,7 +684,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	
 		if (element.mIsBillboard)
 		{
-			this.billboardCheatSphericalBegin();
+			//this.billboardCheatSphericalBegin();
 		}
 		
         // draw using hardware buffers             
@@ -759,7 +763,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 				
 		if (element.mIsBillboard)
 		{
-			this.billboardEnd();
+			//this.billboardEnd();
 		}			
 					
 		//Hierachical objects management
@@ -874,7 +878,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 
 		if (element.mIsBillboard)
 		{
-			this.billboardCheatSphericalBegin();
+			//this.billboardCheatSphericalBegin();
 		}
 		
         // draw using hardware buffers             
@@ -992,15 +996,23 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			shader.renderStateVector.put(2, 0);	
 		}	 	    
 	    
-
+		if (element.mPickingColor != null){
+			//Log.d("","PICKING "+shader.getColorVectorHandle());
+			shader.colorVector.put(0, (float)element.mPickingColor[0]/256.0f);
+			shader.colorVector.put(1, (float)element.mPickingColor[1]/256.0f);
+			shader.colorVector.put(2, (float)element.mPickingColor[2]/256.0f);
+		} else {
+			//Log.d("","PICKING COLOR IS NULL");
+		}
 	
+		
 	    if (element.mRendererInterface != null)
 	    {
 	    	element.mRendererInterface.prerender(shader.camPos, shader.MVMatrix,shader.MVPMatrix,shader.projectionMatrix,shader.normalMatrix,shader.renderStateVector);
 	    }
 	    else
 	    {
-		    
+
 		    
 		    GLES20.glUniformMatrix4fv(shader.getMVMatrixHandle(), 1, false, shader.MVMatrix, 0);
 		    
@@ -1012,6 +1024,8 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		    //GLES20.glUniformMatrix4fv(mShadowTextureMatrixHandle, 1, false, mShadowTextureMatrix, 0);
 		    GLES20.glUniformMatrix4fv(shader.getShadowTextureMatrixHandle(), 1, false,shader.shadowTextureMatrix,0);
 		    GLES20.glUniform4iv(shader.getRenderStateVectorHandle(), 1, shader.renderStateVector);	
+		  
+	    	GLES20.glUniform4fv(shader.getColorVectorHandle(), 1, shader.colorVector);		    
 		        	
 	    }
 	    	
@@ -1053,7 +1067,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 				
 		if (element.mIsBillboard)
 		{
-			this.billboardEnd();
+			//this.billboardEnd();
 		}			
 					
 		GLES20.glActiveTexture(GLES20.GL_TEXTURE0);	
@@ -1115,7 +1129,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	
 
 
-	
+	/*
 	public void renderRenderElementPickable(Sd3dRendererElement element)
 	{
 	}
@@ -1131,25 +1145,35 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		// stored modelview matrix
 		//mGl.glPopMatrix();		
 	}
-	
+	*/
 	private void renderRenderListShadowVolume(Sd3dShader shader)
 	{
+		shader.bind();
+		
 		for (int i = 0; i < mCountRenderElement;i++)
 		{
-			if (mRenderList[i].mIsShadowVolume)
+			if (mRenderList[i].mIsShadowVolume){
+				
+				Matrix.setIdentityM(shader.modelMatrix, 0);
+				Matrix.setIdentityM(shader.normalMatrix, 0);				
+				
 			  renderRenderElement(mRenderList[i],shader);
-		}			
+			}
+		}	
+		
+		shader.unbind();
 	}
 	
-	
+	/*
 	public void renderRenderListPickable()
 	{
 		for (int i = 0; i < mCountRenderElement;i++)
 		{
-			if (mRenderList[i].mIsPickable)
+			if (mRenderList[i].mIsPickable){
 			  renderRenderElementPickable(mRenderList[i]);
+			}
 		}		
-	}
+	}*/
 	
 	private void renderRenderInScreenSpaceList(Sd3dShader shader)
 	{
@@ -1205,10 +1229,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	
 	public void renderShadowVolumeScene(Sd3dScene scene,Sd3dShader shader)
 	{
-        //GLES20.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-        //GLES20.glFrontFace(GL11.GL_CW);
-        //GLES20.glCullFace(GL11.GL_BACK);
-
+		
 		Matrix.setIdentityM(shader.viewMatrix, 0);
 		
 		if (scene.getCamera().getRotationMatrix() == null)
@@ -1230,7 +1251,10 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
         float pos[] = scene.getCamera().getPosition();
 
         Matrix.translateM(shader.viewMatrix, 0, -pos[0], -pos[1], -pos[2]);
-
+		
+		
+		
+		
         //Copy camera position
         shader.camPos.position(0);
         shader.camPos.put(pos[0]);
@@ -1238,26 +1262,58 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
         shader.camPos.put(pos[2]);
         shader.camPos.put(0.f);
         
+       
         this.setupShadowVolumeStep1();
 		this.setupShadowVolumeStep2();
 		this.renderRenderListShadowVolume(shader);
-
 		this.setupShadowVolumeStep3();
+		
 		this.renderRenderListShadowVolume(shader);        
 
 		this.setupShadowVolumeStep4();
 		
-		drawShadowVolumeQuad(shader);
+		drawShadowVolumeQuad(colorOnlyShader);
 
 		this.setupShadowVolumeStep5();
-        
+
         
         
 	}	
 	
 	public void renderPickableScene(Sd3dScene scene)
 	{
+
+		System.arraycopy(defaultShader.projectionMatrix, 0, pickingShader.projectionMatrix, 0, 16);
 		
+		Matrix.setIdentityM(pickingShader.viewMatrix, 0);
+		
+		if (scene.getCamera().getRotationMatrix() == null)
+		{
+			float rot[] = scene.getCamera().getOrientation();           
+			Matrix.rotateM(pickingShader.viewMatrix, 0, rot[0], 1.0f, 0.0f, 0.0f);
+			Matrix.rotateM(pickingShader.viewMatrix, 0, rot[1], 0.0f, 1.0f, 0.0f);
+			Matrix.rotateM(pickingShader.viewMatrix, 0, rot[2], 0.0f, 0.0f, 1.0f);
+		}
+			
+        float pos[] = scene.getCamera().getPosition();
+
+        Matrix.translateM(pickingShader.viewMatrix, 0, -pos[0], -pos[1], -pos[2]);
+				
+        
+        pickingShader.bind();
+        Log.d("PICKING SHADER =",""+pickingShader.getColorVectorHandle());
+		for (int i = 0; i < mCountRenderElement;i++)
+		{
+			if (mRenderList[i].mIsPickable){
+				Matrix.setIdentityM(pickingShader.modelMatrix, 0);
+				Matrix.setIdentityM(pickingShader.normalMatrix, 0);				
+				
+				renderRenderElement(mRenderList[i],pickingShader);
+			}
+		}	
+		
+		pickingShader.unbind();
+        
 	}
 	
 
@@ -1324,7 +1380,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		lightList.addAll(scene.getPositionLight());
 		int lightPass = 0;
 		//Log.d("sd3d","toto:"+lightList.size());
-	
+			
 		
 		// Light pass count
 		defaultShader.renderStateVector.put(3,lightList.size());
@@ -1440,11 +1496,14 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	        lightPass++;
 		}
         
+		//renderPickableScene(scene);
+		
         if (this.sampling != null)
         {
         	this.sampling.onRenderToScreen(screenWidth, screenHeight);
         	this.sampling.drawSampler(screenWidth, screenHeight, textureOnlyShader);
         }
+        
         
         float[] tmp = defaultShader.projectionMatrix;
         defaultShader.projectionMatrix = this.mProjectionOrthoMatrix;
@@ -1452,7 +1511,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
         this.renderRenderInScreenSpaceList(defaultShader); 
         
         defaultShader.projectionMatrix = tmp;
-       
+       	
         this.renderText(this.textureOnlyShader);
         
         this.mBmpFont.resetTextBuffer();    
@@ -1525,6 +1584,15 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		this.screenHeight = height;
 		this.screenWidth = width;		
 		mBmpFont.setScreenProperties(width, height);
+		
+		//this.pickingFrameBuffer.updateScreen(width, height);
+		
+		/*
+    	if (pickingFrameBuffer != null) {
+    		pickingFrameBuffer.release();
+    	}*/
+    	
+
 	}
 	
     public Sd3dRendererGl20(boolean useTranslucentBackground,int maxRenderElement,int width,int height) {
@@ -1623,9 +1691,9 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
     }
         
     
-    public void sizeChanged(GL11 gl, int width, int height) {
+    public void sizeChanged(GL11 gl, int width, int height) {  	
          //gl.glViewport(0, 0, width, height);
-
+	    		
          /*
           * Set our projection matrix. This doesn't have to be done
           * each time we draw, but usually a new projection needs to
@@ -1653,9 +1721,12 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
         final float far = 1000.0f;
      
         Matrix.frustumM(defaultShader.projectionMatrix, 0, left, right, bottom, top, near, far);    	
+        //Matrix.frustumM(colorOnlyShader.projectionMatrix, 0, left, right, bottom, top, near, far);  
+        Matrix.frustumM(textureOnlyShader.projectionMatrix, 0, left, right, bottom, top, near, far);  
         
         Log.d("Sd3dRendererGl20",this.screenWidth+" "+this.screenHeight);
         Matrix.orthoM(mProjectionOrthoMatrix, 0, 0, this.screenWidth, this.screenHeight, 0, -1, 1);
+              
     }
 
     public void surfaceCreated(GL11 gl) {
@@ -1685,7 +1756,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
     		Log.e("Sd3d","Warning expected shader file : "+"shaders/default_fs.gl"+" not present in <asset> folder.");    		
     	}
     	
-    	
+    	/*
     	defaultShader = new Sd3dShader(this.vertexShader,this.fragmentShader);
     	defaultShader.register();
  		
@@ -1694,45 +1765,64 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
     			Sd3dRessourceManager.getManager().getText("shaders/textureonly_fs.gl"));
     	textureOnlyShader.register();
     	
+    	
+    	colorOnlyShader = new Sd3dShader(Sd3dRessourceManager.getManager().getText("shaders/coloronly_vs.gl"),
+    			Sd3dRessourceManager.getManager().getText("shaders/coloronly_fs.gl"));
+    	colorOnlyShader.register();    	
+    	
+		pickingShader = new Sd3dShader(Sd3dRessourceManager.getManager().getText("shaders/coloronly_vs.gl"),
+				Sd3dRessourceManager.getManager().getText("shaders/coloronly_fs.gl"));
+		pickingShader.register();
+    	*/
+
+//    	if (defaultShader != null) {
+//    		defaultShader.unregister();
+//    	}
+    	
+    	defaultShader = new Sd3dShader(this.vertexShader,this.fragmentShader);
+    	defaultShader.register();    
+    	
+//    	if (textureOnlyShader != null) {
+//    		textureOnlyShader.unregister();
+//    	}    	
+    	
+    	textureOnlyShader = new Sd3dShader(Sd3dRessourceManager.getManager().getText("shaders/textureonly_vs.gl"),
+    			Sd3dRessourceManager.getManager().getText("shaders/textureonly_fs.gl"));
+    	textureOnlyShader.register();
+    	
+    	
+//    	if (colorOnlyShader != null) {
+//    		colorOnlyShader.unregister();
+//    	}      	
+    	
+    	colorOnlyShader = new Sd3dShader(Sd3dRessourceManager.getManager().getText("shaders/coloronly_vs.gl"),
+    			Sd3dRessourceManager.getManager().getText("shaders/coloronly_fs.gl"));
+    	colorOnlyShader.register();    	    	
+    	
+//    	if (pickingShader != null) {
+//    		pickingShader.unregister();
+//    	}        	
+    	
+    	pickingShader = new Sd3dShader(Sd3dRessourceManager.getManager().getText("shaders/coloronly_vs.gl"),
+				Sd3dRessourceManager.getManager().getText("shaders/coloronly_fs.gl"));
+		pickingShader.register();  
+	
+    	
+    	if (pickingFrameBuffer != null) {
+    		Log.d("Sd3dRendererGL20","Deleting picking framebuffer");
+    		pickingFrameBuffer.release();
+    		pickingFrameBuffer = null;
+    	}
+    	
+		//pickingFrameBuffer = new Sd3dFrameBuffer();
+		//pickingFrameBuffer.init(screenWidth, screenHeight);
+    	
+    	
+
  		GameHolder.mGame.invalidateRenderElements = true;
     }	
     
-    public void setupLightVector(float x,float y,float z)
-    {
-    	/*
-    	 float mat_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    	 //float mat_shininess[] = { 50.0f };
-    	  //mGl.glLoadIdentity();
- 	 
-         float noAmbient[] = {0.5f, 0.5f, 0.5f, 1.0f};  	
-         float whiteDiffuse[] = {10.0f, 10.0f, -10.0f, 1.0f};
-    	 //float light_position[] = { x, y, z, 0.0f };   	
-    	 float light_position[] = { 10.f, -10.f, 10.f, 1.0f };
-    	 */   
-    	 /*
-    	 mGl.glShadeModel (GL11.GL_SMOOTH);
-    	 
-    	 mGl.glLightModelfv(GL11.GL_LIGHT_MODEL_AMBIENT,noAmbient,0); 
-    	 //mGl.glLightModelf(GL11.GL_LIGHT_MODEL_TWO_SIDE,1.f); 
-    	 mGl.glMaterialfv(GL11.GL_FRONT, GL11.GL_SPECULAR, mat_specular,0);
-    	 
-    	 //mGl.glLightfv(GL11.GL_LIGHT0, GL11.GL_DIFFUSE, whiteDiffuse,0);
-    	 //mGl.glMaterialfv(GL11.GL_FRONT, GL11.GL_SHININESS, mat_shininess,0);
-    	 mGl.glMaterialfv(GL11.GL_FRONT_AND_BACK, GL11.GL_AMBIENT_AND_DIFFUSE, noAmbient,0);
-    	 mGl.glLightfv(GL11.GL_LIGHT0, GL11.GL_AMBIENT, noAmbient,0);
-    	 mGl.glLightfv(GL11.GL_LIGHT0, GL11.GL_POSITION, light_position,0);   
-
-    	 
-    	 //mGl.glEnable(GL11.GL_NORMALIZE);
-    	 
-       	 mGl.glEnable(GL11.GL_LIGHTING);
-       	 mGl.glEnable(GL11.GL_LIGHT0);  
-       	//mGl.glEnable(GL11.GL_COLOR_MATERIAL);
-       	 
-       	 */
-    }
-    
-    public Sd3dObject getObjectFromPickingColor(byte r,byte g,byte b)
+    public Sd3dObject getObjectFromPickingColor(int r,int g,int b)
     {		
     	for (int i = 0; i < mCountRenderElement;i++)
     	{
@@ -1762,28 +1852,6 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
     	element.mPickingColor[2] = 0;      	
     }
     
-    public Sd3dObject pickObject(int x,int y)
-    {
-    	java.nio.ByteBuffer bb = java.nio.ByteBuffer.allocate(4);
-    	GLES20.glGetError();
-    	GLES20.glReadPixels(x,screenHeight - y - top, 1, 1, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, bb);
-    	//mGl.glReadPixels(0,0, 1, 1, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, bb);
-    	/*
-    	float r = bb.getFloat(0);
-    	float g = bb.getFloat(4);    	
-    	float b = bb.getFloat(8);
-    	
-    	int ri = bb.getInt(0);
-    	int gi = bb.getInt(4); 
-    	int bi = bb.getInt(8);
-    	*/
-    	byte r = bb.get(0);
-    	byte g = bb.get(1);
-    	byte b = bb.get(2); 
-    	return getObjectFromPickingColor(r,g,b);
-    	
-    }
-
 	public int getTop() {
 		return top;
 	}
@@ -1947,4 +2015,36 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	public void invalidateRendererElements() {
 		this.mBmpFont.mTextureName = 0;
 	}	
+	
+	public Sd3dObject pickAt(int x, int y, Sd3dScene scene){	
+		
+    	if (pickingFrameBuffer == null){
+			pickingFrameBuffer = new Sd3dFrameBuffer();
+			pickingFrameBuffer.init(screenWidth, screenHeight);
+    	}    	
+				
+		pickingFrameBuffer.bind();
+		
+		GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		GLES20.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);		
+		
+		renderPickableScene(scene);
+		
+		GLES20.glFlush();
+		
+		IntBuffer buffer = IntBuffer.allocate(1);
+		GLES20.glReadPixels(x,screenHeight - y - top, 1, 1, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE  , buffer);
+			
+		Log.d("Sd3dRendererGl20","Picked color [ "+x+" , "+y+" ] = "+buffer.get(0)+" ERROR="+GLES20.glGetError() );
+		
+		pickingFrameBuffer.unbind(this.screenWidth, this.screenHeight);
+		
+		int r = buffer.get(0) & 0xff;
+		int g = (buffer.get(0) & 0xff00) >> 8;
+		int b = (buffer.get(0) & 0xff0000) >> 16;
+		//Log.d("Sd3dRendererGl20","R="+r+" G="+g+" B="+b);
+		return getObjectFromPickingColor(r,g,b);
+	}
+	
+	
 }

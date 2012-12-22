@@ -13,9 +13,11 @@ import android.util.Log;
 public class Sd3dGameSkyBoxEntityPerFace  extends Sd3dGameEntity
 {
 	Sd3dGameEntity mTargetEntity;
-	public Sd3dGameSkyBoxEntityPerFace(Sd3dGameEntity targetEntity, float size)
+	private float mZOffset;
+	public Sd3dGameSkyBoxEntityPerFace(Sd3dGameEntity targetEntity, float size, float z_offset)
 	{
 		mTargetEntity = targetEntity;
+		mZOffset = z_offset;
 		//float one = (float)500.0;
 		float one = size;
 		float vertices[] = {
@@ -237,7 +239,7 @@ public class Sd3dGameSkyBoxEntityPerFace  extends Sd3dGameEntity
 	{	
 		
 		this.mPosition[0] = mTargetEntity.mPosition[0];		
-		this.mPosition[1] = mTargetEntity.mPosition[1];	
+		this.mPosition[1] = mZOffset + mTargetEntity.mPosition[1];	
 		this.mPosition[2] = mTargetEntity.mPosition[2];
 		
 	}

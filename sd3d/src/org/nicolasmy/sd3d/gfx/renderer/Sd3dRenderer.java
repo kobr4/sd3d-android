@@ -1337,4 +1337,11 @@ public class Sd3dRenderer implements Sd3dRendererInterface
 	public void setScreenHeight(int screenHeight) {
 		this.screenHeight = screenHeight;
 	}
+
+
+	@Override
+	public Sd3dObject pickAt(int x, int y, Sd3dScene scene) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

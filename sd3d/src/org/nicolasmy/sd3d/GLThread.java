@@ -3,10 +3,12 @@ package org.nicolasmy.sd3d;
 import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
 
+import javax.microedition.khronos.opengles.GL10;
 import javax.microedition.khronos.opengles.GL11;
 
 import org.nicolasmy.sd3d.gfx.renderer.Sd3dRendererInterface;
 
+import android.opengl.GLES20;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
@@ -106,7 +108,6 @@ public class GLThread extends Thread {
             }
             if (changed) {
                 gl = (GL11) mEglHelper.createSurface(mHolder);
-                //Log.d("GLThread","Surface created= "+mHolder.getSurfaceFrame().width()+" "+mHolder.getSurfaceFrame().height());
                 tellRendererSurfaceChanged = true;
             }
             if (tellRendererSurfaceCreated) {
@@ -117,37 +118,22 @@ public class GLThread extends Thread {
             if (tellRendererSurfaceChanged) {
                 mRenderer.sizeChanged(gl, w, h);
                 tellRendererSurfaceChanged = false;
+                //mGame.invalidateRenderElements = true;
             }
             if ((w > 0) && (h > 0)) {
                 /* draw a frame here */
-                //mRenderer.drawFrame(gl);
-            	
             	mRenderer.setGL11Context(gl);
+             
             	
-            	//gl = mEglHelper.makePickCurrent();
-          	    //mGame.processFrame(gl);
-            	//gl.glColor4f(1.0, 1.0, blue, alpha)
+            	mGame.processFrame(gl);
+            	mEglHelper.swap(); 
             	/*
-            	gl.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-          	    gl.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-          	    mEglHelper.makePickCurrent();
-            	gl.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-          	    gl.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);              	    
-            	*/
-            	//
-          	    //gl.glFlush();
-          	    //mEglHelper.swapPicking();
-          	    //mEglHelper.makeDisplayCurrent();
-          	    //mEglHelper.swapPicking();
-
             	if (mGame.mHasPick)
             	{
             	  gl = mEglHelper.makePickCurrent();	
             	  mRenderer.sizeChanged(gl, w, h);
             	  mGame.processPickingFrame(gl);
-            	  //mEglHelper.swapPicking();
-              	  //gl.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-          	      //gl.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);                	  
+            	                  	  
             	  gl.glFlush();
             	  mGame.processPicking(gl);
             	  mEglHelper.makeDisplayCurrent();
@@ -167,35 +153,7 @@ public class GLThread extends Thread {
                 	mGame.processFrame(gl);
                 	mEglHelper.swap();                		
             	}
-            	            	    
-            	/*
-            	if (!mGame.mHasPick)
-            	{
-            	  mGame.processFrame(gl);
-            	  mEglHelper.swap();
-            	}
-            	else
-            	{
-            		//mEglHelper.makePickCurrent();
-              	    //mGame.processFrame(gl); 
-              	    //gl.glFlush();
-              	    //mEglHelper.swapPicking();
-              	    //mEglHelper.swap();
-              	    //mEglHelper.makeDisplayCurrent();
-              	    mGame.mPickCount++;
-              	    //mEglHelper.swap();
-              	    if (mGame.mPickCount == 2)
-              	    {
-              	    	mGame.mHasPick = false;
-              	    	mGame.mPickCount = 0;
-              	    }
-            	}
-            	*/
-            	/*
-                 * Once we're done with GL, we need to call swapBuffers()
-                 * to instruct the system to display the rendered frame
-                 */
-                
+            	*/          	                    
             }
          }
 
@@ -230,6 +188,7 @@ public class GLThread extends Thread {
         synchronized(this) {
             mHasSurface = false;
             notify();
+            //Log.d("=>","View destroyed");
             //GameHolder.mGame.invalidateRenderElements = true;
         }
     }
@@ -262,7 +221,8 @@ public class GLThread extends Thread {
             mHeight = h;
             mSizeChanged = true;
             //GameHolder.mGame.invalidateRenderElements = true;
-        }
+       
+        }      
     }
 
     public void requestExitAndWait() {

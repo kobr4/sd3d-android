@@ -116,11 +116,13 @@ android.view.View.OnTouchListener
     }
 
     public void surfaceCreated(SurfaceHolder holder) {
-    	mGLThread.setHolder(holder);
-        mGLThread.surfaceCreated();
         int pos[] = new int[2];
         this.getLocationOnScreen(pos);
         this.mGLThread.mGame.mRenderer.setTop(pos[1]);
+        
+    	mGLThread.setHolder(holder);
+        mGLThread.surfaceCreated();
+
 
     }
 
@@ -161,7 +163,9 @@ android.view.View.OnTouchListener
      */
     @Override public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        mGLThread.onWindowFocusChanged(hasFocus);
+        
+        if (mGLThread != null)
+        	mGLThread.onWindowFocusChanged(hasFocus);
     }
 
     /**

@@ -60,6 +60,7 @@ public abstract class Sd3dGameEntity
 	{
 		hasObject = true;
 		mObject = obj;
+		obj.mPosition = mPosition;
 	}
 	
 	public void mergeObject(Sd3dObject obj)

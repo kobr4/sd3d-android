@@ -1,6 +1,7 @@
 package org.nicolasmy.sd3d;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import javax.microedition.khronos.opengles.GL11;
@@ -25,6 +26,7 @@ import org.nicolasmy.sd3d.gfx.renderer.Sd3dRendererGl20;
 import org.nicolasmy.sd3d.gfx.renderer.Sd3dRendererInterface;
 import org.nicolasmy.sd3d.interfaces.Sd3dCollisionAgainstInterface;
 import org.nicolasmy.sd3d.interfaces.Sd3dFrameProcessorInterface;
+import org.nicolasmy.sd3d.interfaces.Sd3dTouchListenerInterface;
 import org.nicolasmy.sd3d.math.Sd3dVector2d;
 
 import android.app.Activity;
@@ -40,28 +42,16 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
 
-
-/*
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.view.MotionEvent;
-*/
-/*
-import com.sd3d.entity.Sd3dGameChaseCameraEntity;
-import com.sd3d.entity.Sd3dGameCubeEntity;
-import com.sd3d.entity.Sd3dGameEntity;
-import com.sd3d.entity.Sd3dGameLookAroundCameraEntity;
-import com.sd3d.entity.Sd3dGameSkyBoxEntity;
-import com.sd3d.entity.Sd3dGameTestEntity;
-import com.sd3d.entity.Sd3dParticlesEffectEntity;
-import com.sd3d.entity.Sd3dRandomMovingParticlesEffectEntity;
-*/
-
 public class Sd3dGame
 {	
 	public enum Sd3dInputEventType{ACCELEROMETER,TOUCH,KEYBOARD};
 	public boolean invalidateRenderElements;
 	private ArrayList<Sd3dFrameProcessorInterface> mArray = new ArrayList<Sd3dFrameProcessorInterface>();
+	
+	public Sd3dObject pickAt(int x,int y) {
+		return mRenderer.pickAt(x, y, mScene);
+	}
+	
 	public class Sd3dInputEvent
 	{
 		public boolean isActive;
@@ -84,145 +74,121 @@ public class Sd3dGame
 	
 	public class Sd3dGameEntityManager
 	{
-		public Sd3dGameEntity mEntityList[];
-		private int mMaxEntity;
-		long mLastFrameTime = 0;
-		long mElapsedTime = 0;
-		
-		
-		Sd3dGameEntityManager(int maxEntity)
-		{
-			mMaxEntity = maxEntity;
-			mEntityList = new Sd3dGameEntity[mMaxEntity];
-		}
+		public ArrayList<Sd3dGameEntity> mEntityList = new ArrayList<Sd3dGameEntity>();
+		//long mLastFrameTime = 0;
+		//long mElapsedTime = 0;
 		
 		public void addEntity(Sd3dGameEntity entity)
 		{
-			for (int i = 0;i < mMaxEntity;i++)
-			{
-				if (mEntityList[i] == null)
-				{
-					mEntityList[i] = entity;
-					return;
-				}
-			}
+			mEntityList.add(entity);	
 		}
 		
 		public void reset()
 		{
-			for (int i = 0;i < mMaxEntity;i++)
-			{
-				mEntityList[i] = null;
+			synchronized(this.mEntityList) {
+				mEntityList.clear();
 			}
 		}
 		
-		public void processFrame(Sd3dScene scene,Sd3dInputEvent keyboardEvent,Sd3dGame game)
+		public void processFrame(long dt,int currentTime,Sd3dScene scene,Sd3dInputEvent keyboardEvent,Sd3dGame game)
 		{	
-			int currentTime = 0;
-			long lcurrenT = 0;
-			long elapsedTime = 0;
-			do {
-			if (mLastFrameTime == 0)
-				mLastFrameTime = java.lang.System.currentTimeMillis();
-			lcurrenT = java.lang.System.currentTimeMillis();
-			elapsedTime = lcurrenT - mLastFrameTime;
-			} while (elapsedTime < 16);
-			mElapsedTime = elapsedTime;
-			mLastFrameTime = lcurrenT;
-			for (int i=0;i < mMaxEntity;i++)
+			synchronized(this.mEntityList) {
+			for (int i=0;i < this.mEntityList.size();i++)
 			{
-				if (mEntityList[i] != null)
-					if (mEntityList[i].isMarkForDeletion)
+				if (mEntityList.get(i) != null)
+					if (mEntityList.get(i).isMarkForDeletion)
 					{
-						mEntityList[i].release(game);
-						mEntityList[i] = null;
+						mEntityList.get(i).release(game);
+						mEntityList.set(i,null);
 					}
 					else
-					if(mEntityList[i].isActive)
+					if(mEntityList.get(i).isActive)
 					{
-					if (mEntityList[i].hasOnProcessFrame)
+					if (mEntityList.get(i).hasOnProcessFrame)
 					{
-						mEntityList[i].onProcessFrame((int)mElapsedTime);
+						mEntityList.get(i).onProcessFrame((int)mElapsedTime);
 					}
 					
-					if (mEntityList[i].isCamera)
+					if (mEntityList.get(i).isCamera)
 					{
-						scene.setCamera(mEntityList[i].getPosition(),mEntityList[i].getOrientation(),((Sd3dGameCameraEntity)mEntityList[i]).rotationMatrix);
+						scene.setCamera(mEntityList.get(i).getPosition(),mEntityList.get(i).getOrientation(),((Sd3dGameCameraEntity)mEntityList.get(i)).rotationMatrix);
 					}
 					
-					if (mEntityList[i].hasObject)
+					if (mEntityList.get(i).hasObject)
 					{
 						if (invalidateRenderElements)
 						{
-							for (int j = 0; j< mEntityList[i].mObject.mMesh.length;j++)
-							  mEntityList[i].mObject.mRenderElement = null;
-							for (int l = 0;l < mEntityList[i].mObject.mMaterial.length;l++)
-							  mEntityList[i].mObject.mMaterial[l].mColorName = 0;
-							if (mEntityList[i].mObject.mIsPickable)
+							for (int j = 0; j< mEntityList.get(i).mObject.mMesh.length;j++)
+							  mEntityList.get(i).mObject.mRenderElement = null;
+							for (int l = 0;l < mEntityList.get(i).mObject.mMaterial.length;l++) {
+							  mEntityList.get(i).mObject.mMaterial[l].mColorName = 0;
+							  mEntityList.get(i).mObject.mMaterial[l].mTextureName = 0;
+							}
+							if (mEntityList.get(i).mObject.mIsPickable)
 							{
-								mEntityList[i].mObject.pickedMaterial.mColorName = 0;
-								mEntityList[i].mObject.prepickedMaterial.mColorName = 0;
-								mEntityList[i].mObject.unpickedMaterial.mColorName = 0;
+								mEntityList.get(i).mObject.pickedMaterial.mColorName = 0;
+								mEntityList.get(i).mObject.prepickedMaterial.mColorName = 0;
+								mEntityList.get(i).mObject.unpickedMaterial.mColorName = 0;
 							}
 						}
-						scene.addObject(mEntityList[i].mObject);
+						scene.addObject(mEntityList.get(i).mObject);
 					}
 					
-					if (mEntityList[i].hasProcessTimer)
+					if (mEntityList.get(i).hasProcessTimer)
 					{
-						if (mEntityList[i].mLastTimer + mEntityList[i].mNextTimer > currentTime)
+						if (mEntityList.get(i).mLastTimer + mEntityList.get(i).mNextTimer > currentTime)
 						{
-							mEntityList[i].onProcessTimer();
-							mEntityList[i].mLastTimer = currentTime;
+							mEntityList.get(i).onProcessTimer();
+							mEntityList.get(i).mLastTimer = currentTime;
 						}
 					}
 
 					
 					if (mAccelEvent.isActive)
 					{
-						if (mEntityList[i].hasOnAccelerometerEvent)
+						if (mEntityList.get(i).hasOnAccelerometerEvent)
 						{
-							if (mEntityList[i].isReceiveInput())
+							if (mEntityList.get(i).isReceiveInput())
 							{
 								
 								
-								mEntityList[i].onAccelerometerEvent(mAccelEvent);
+								mEntityList.get(i).onAccelerometerEvent(mAccelEvent);
 							}
 						}						
 					}
 					if (mTouchEvent.isActive)
 					{
-						if (mEntityList[i].hasOnTouchEvent)
+						if (mEntityList.get(i).hasOnTouchEvent)
 						{
-							if (mEntityList[i].isReceiveInput())
+							if (mEntityList.get(i).isReceiveInput())
 							{							
-								mEntityList[i].onTouchEvent();
+								mEntityList.get(i).onTouchEvent();
 							}
 						}						
 					}					
 					
 					if (keyboardEvent != null)
 					{
-						if (mEntityList[i].hasOnKeyboardEvent)
+						if (mEntityList.get(i).hasOnKeyboardEvent)
 						{
-							mEntityList[i].onKeyboardEvent(keyboardEvent);
+							mEntityList.get(i).onKeyboardEvent(keyboardEvent);
 						}						
 					}
 					
-					if (mEntityList[i] instanceof Sd3dCollisionAgainstInterface)
+					if (mEntityList.get(i) instanceof Sd3dCollisionAgainstInterface)
 					{
-						Sd3dCollisionAgainstInterface collisioner = (Sd3dCollisionAgainstInterface)mEntityList[i];
-						for (int j=0;j < mMaxEntity;j++)
+						Sd3dCollisionAgainstInterface collisioner = (Sd3dCollisionAgainstInterface)mEntityList.get(i);
+						for (int j=0;j < mEntityList.size();j++)
 						{
-							if ((mEntityList[j] != null)&&(mEntityList[j].isActive))
-								if (mEntityList[j] instanceof Sd3dGameMobileEntity)
-									collisioner.collideAgainst((Sd3dGameMobileEntity)mEntityList[j]);
+							if ((mEntityList.get(j) != null)&&(mEntityList.get(j).isActive))
+								if (mEntityList.get(j) instanceof Sd3dGameMobileEntity)
+									collisioner.collideAgainst((Sd3dGameMobileEntity)mEntityList.get(j));
 						}
 					}
 					
-					if (mEntityList[i] instanceof Sd3dLight)
+					if (mEntityList.get(i) instanceof Sd3dLight)
 					{
-						scene.addLight((Sd3dLight)mEntityList[i]);
+						scene.addLight((Sd3dLight)mEntityList.get(i));
 					}
 				}
 
@@ -237,8 +203,15 @@ public class Sd3dGame
 				invalidateRenderElements = false;
 			}
 		}
+		}
 		
 	}	
+	
+	
+	public void reset() {
+		this.mGameEntityManager.reset();
+	}
+	
 	Sd3dInputEvent mKeyboardEvent;
 	Sd3dInputEvent mAccelEvent = new Sd3dInputEvent();
 	Sd3dInputEvent mTouchEvent = new Sd3dInputEvent();
@@ -246,42 +219,17 @@ public class Sd3dGame
 	public Sd3dRendererInterface mRenderer;
 	private Sd3dGameEntityManager mGameEntityManager;
 	private Sd3dGLSurfaceView mGLSurfaceView; 
-	private int screenWidth;
-	private int screenHeight;
+
 	int mMaxScene = 5000;
 	int nMaxEntity = 5000;
-	private long mTick;
-	private Sd3dGameSkyBoxEntityPerFace mSkybox;
-	private Sd3dGameChaseCameraEntity mCamera;
-	/*
-	public void cameraZoomIn()
-	{
-		this.mCamera.zoomIn();
-	}
-	
-	public void cameraZoomOut()
-	{
-		this.mCamera.zoomOut();	
-	}	
-	
-	public void cameraRotateLeft()
-	{
-		this.mCamera.rotateLeft();		
-	}		
-	
-	public void cameraRotateRight()
-	{
-		this.mCamera.rotateRight();	
-	}	
-	*/
 	public void updateRenderer(Activity activity)
 	{
         DisplayMetrics dm = new DisplayMetrics();
         activity.getWindowManager().getDefaultDisplay().getMetrics(dm);	
         mDeviceRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
 		this.mRenderer.updateScreenResolution(dm.widthPixels,dm.heightPixels);
-		screenWidth = dm.widthPixels;
-		screenHeight = dm.heightPixels;
+//		screenWidth = dm.widthPixels;
+//		screenHeight = dm.heightPixels;
 	}
 	
 	public void init(SurfaceHolder holder)
@@ -290,8 +238,7 @@ public class Sd3dGame
 		Rect rect = holder.getSurfaceFrame();
 		this.mRenderer = new Sd3dRendererGl20(true,mMaxScene,rect.width(),rect.height());
 		this.mScene = new Sd3dScene(mMaxScene);
-		this.mGameEntityManager = new Sd3dGameEntityManager(nMaxEntity);
-		this.mTick = java.lang.System.currentTimeMillis();
+		this.mGameEntityManager = new Sd3dGameEntityManager();
 	}
 	
 	
@@ -321,10 +268,8 @@ public class Sd3dGame
 			this.mRenderer = new Sd3dRenderer(true,mMaxScene,dm.widthPixels,dm.heightPixels);
 		}
 		
-		this.mGameEntityManager = new Sd3dGameEntityManager(nMaxEntity);
+		this.mGameEntityManager = new Sd3dGameEntityManager();
 
-		//this.mTouchEvent = new Sd3dInputEvent();
-		this.mTick = java.lang.System.currentTimeMillis();
 	}
 	
 	public long lasttick = 0;
@@ -334,12 +279,19 @@ public class Sd3dGame
 	public boolean mHasPick = false;
 	public boolean mHasPrePick = false;
 	public int mPickCount = 0;
-	public int mPickX;
-	public int mPickY;	
+
 	public int mDeviceRotation;
-	//public boolean mToto = false;
 	private boolean mShowFps = false;
 	
+	private long mLastFrameTime = 0;
+	private long mElapsedTime = 0;	
+	
+	/**
+	 * 
+	 */
+	private boolean mHasPickRequest = false;
+	public int mPickX;
+	public int mPickY;	
 	
 	public boolean isShowFps() {
 		return mShowFps;
@@ -351,11 +303,22 @@ public class Sd3dGame
 
 	public void processFrame(GL11 gl)
 	{
-		//mRenderer.mGl = gl;
+		int currentTime = 0;
+		long lcurrenT = 0;
+		long elapsedTime = 0;
+		do {
+		if (mLastFrameTime == 0)
+			mLastFrameTime = java.lang.System.currentTimeMillis();
+		lcurrenT = java.lang.System.currentTimeMillis();
+		elapsedTime = lcurrenT - mLastFrameTime;
+		} while (elapsedTime < 16);
+		mElapsedTime = elapsedTime;
+		mLastFrameTime = lcurrenT;		
+		
 		mRenderer.setGL11Context(gl);
 		mScene.initScene();
 		
-		mGameEntityManager.processFrame(mScene,mKeyboardEvent,this);
+		mGameEntityManager.processFrame(mElapsedTime,currentTime,mScene,mKeyboardEvent,this);
 	
 		if (lasttick == 0)
 			lasttick = java.lang.System.currentTimeMillis();		
@@ -371,45 +334,24 @@ public class Sd3dGame
 				count = 0;
 			}
 		}
-		//mRenderer.mBmpFont.addTextToBuffer(""+calculatedFps, 0.0f, 760.0f, 20.f);
-		
+	
 		if (mShowFps)
 			mRenderer.displayText(""+calculatedFps, Sd3dRenderer.ALIGN.RIGHT, Sd3dRenderer.ALIGN.BOTTOM, 20.f);
 		
-		//mRenderer.mBmpFont.addTextToBuffer(""+calculatedFps, 0.f,0.f, 0.2f);
 		count++;
-		
-		//mRenderer.mBmpFont.addTextToBuffer("TIME:"+this.getElapsedTimeString(), Sd3dRenderer.ALIGN.LEFT,Sd3dRenderer.ALIGN.TOP, 20.f);
-		
 		for(Sd3dFrameProcessorInterface processor : this.mArray)
 		{
-			processor.processFrame();
+			processor.processFrame(mElapsedTime);
 		}
 
+		if (mHasPickRequest){
+			mHasPickRequest = false;
+		}
 
 		mRenderer.renderScene(mScene);	
-		
-		
-		//mAccelEvent = null;
-		//mTouchEvent = null;
 		mKeyboardEvent = null;
 	}
 
-	public void processPickingFrame(GL11 gl)
-	{
-		//mRenderer.mGl = gl;
-		mRenderer.setGL11Context(gl);
-		//mRenderer.renderPickableScene(mScene);	
-	}
-	
-	public void processPrePicking(GL11 gl)
-	{
-	}
-	
-	public void processPicking(GL11 gl)
-	{
-	}
-	
 	public Sd3dGLSurfaceView getMGLSurfaceView() {
 		return mGLSurfaceView;
 	}
@@ -436,17 +378,12 @@ public class Sd3dGame
 	}
 
 	public void onSensorChanged(SensorEvent event) {
-		Log.d("onSensorChanged()","");
     	if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
     	{
-    		//if (mAccelEvent == null)
-    		{
-    			//Sd3dInputEvent accel_event = new Sd3dInputEvent();
-    			mAccelEvent.mEvent = event;
-    			mAccelEvent.mType = Sd3dInputEventType.ACCELEROMETER;
-    			mAccelEvent.isActive = true;
-    			mAccelEvent.deviceRotation = this.mDeviceRotation;
-    		}
+			mAccelEvent.mEvent = event;
+			mAccelEvent.mType = Sd3dInputEventType.ACCELEROMETER;
+			mAccelEvent.isActive = true;
+			mAccelEvent.deviceRotation = this.mDeviceRotation;
     	}		
 	}	
 	
@@ -455,44 +392,38 @@ public class Sd3dGame
 		this.mGameEntityManager.addEntity(entity);
 	}	
 	
-	
-	public float mTouchDownX;
-	public float mTouchDownY;
-	public float mTouchMoveX;
-	public float mTouchMoveY;	
-	public float mTouchUpX;
-	public float mTouchUpY;
-	public float mTouchThreshold;
-	public float mFingerOneMoveX;
-	public float mFingerTwoMoveX;
-	public float mFingerOneMoveY;
-	public float mFingerTwoMoveY;	
-	public float mFingerOneMoveOldX;
-	public float mFingerTwoMoveOldX;
-	public float mFingerOneMoveOldY;
-	public float mFingerTwoMoveOldY;	
-	public float mFingerDistanceOld;
-	public Sd3dVector2d mFingerOldVector;
-	public Sd3dVector2d mFingerCurrentVector = new Sd3dVector2d();
-	
-	public float distance(float x1, float y1, float x2, float y2)
-	{
-		return (float)Math.sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
+	public List<Sd3dGameEntity> getEntityList(){
+		return this.mGameEntityManager.mEntityList;
 	}
 	
+	private Sd3dTouchListenerInterface mTouchListener = null;
+	
+	public void registerTouchListener(Sd3dTouchListenerInterface listener){
+		mTouchListener = listener;
+	}
+		
 	public void onTouch(MotionEvent event)
 	{	
-		Log.d("onTouch(MotionEvent event)","touch");
+		//Log.d("onTouch(MotionEvent event)","touch");
+		if (mTouchListener != null){
+			mTouchListener.onTouch(event);
+		}
+		
+		if (mHasPickRequest == false){
+			this.mPickX = (int)event.getX(0);
+			this.mPickY = (int)event.getY(0);
+			mHasPickRequest = true;
+		}
+		
 		if (!mTouchEvent.isActive)
 		{
-			//Sd3dInputEvent touch_event = new Sd3dInputEvent();
 			mTouchEvent.isActive = true;
 			mTouchEvent.mTouchEvent = event;
 			mTouchEvent.mType = Sd3dInputEventType.TOUCH;
-			//mTouchEvent = touch_event;
 		}		
 	}
 	
+
 	
 	public void onKeyUp()
 	{
@@ -539,6 +470,16 @@ public class Sd3dGame
 			mKeyboardEvent.mType = Sd3dInputEventType.KEYBOARD;
 		}
 	}	
+	
+	public Sd3dFrameProcessorInterface getFrameProcessor(String frameProcessorClassName) {
+		for (Sd3dFrameProcessorInterface fp : mArray) {
+			if (fp.getClass().toString().contains(frameProcessorClassName)) {
+				return fp;
+			}
+		
+		}
+		return null;
+	}
 }
 
 

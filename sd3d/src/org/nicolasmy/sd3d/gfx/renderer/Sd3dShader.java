@@ -113,6 +113,11 @@ public class Sd3dShader {
 		initAttributes();
 	}
 	
+	public void unregister() {
+		GLES20.glDeleteShader(mProgramHandle);
+	}
+	
+	
 	public void bind()
 	{
     	GLES20.glUseProgram(mProgramHandle);
@@ -186,7 +191,7 @@ public class Sd3dShader {
 		    mRenderStateVectorHandle = GLES20.glGetUniformLocation(mProgramHandle, "u_RenderStateVector");	
 		    
 		    mColorVectorHandle = GLES20.glGetUniformLocation(mProgramHandle, "u_ColorVector");
-		    
+		    //Log.d("Sd3dShader","Color vector handle= "+mColorVectorHandle);
 		    mLightDirHandle = GLES20.glGetUniformLocation(mProgramHandle, "u_LightDir");
 		    
 		    mLightPosHandle = GLES20.glGetUniformLocation(mProgramHandle, "u_LightPos");
