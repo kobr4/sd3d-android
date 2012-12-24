@@ -87,7 +87,6 @@ public class Sd3dGameMobileEntity extends Sd3dGameEntity
 		mObject.mRotation = new float[3];
 		
 		this.hasOnProcessFrame = false;
-		this.hasOnTouchEvent = false;
 		this.hasOnAccelerometerEvent = false;
 		this.setCollisionRadius(1.f);		
 		

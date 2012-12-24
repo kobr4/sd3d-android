@@ -17,6 +17,9 @@ import org.nicolasmy.sd3d.math.Sd3dMatrix;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 //import javax.imageio.*;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.util.Log;
 
 public class Sd3dMaterial
 {
@@ -324,5 +327,46 @@ public class Sd3dMaterial
 		
 		this.mWidth = material.mWidth;
 		
+	}	
+	
+	public void fromString(String text, int width, int height, float textSize, int textColor) {
+	    Paint paint = new Paint();
+	    paint.setTextSize(textSize);
+	    paint.setColor(textColor);
+	    paint.setTextAlign(Paint.Align.CENTER);
+	    int text_width = (int) (paint.measureText(text) + 0.5f); // round
+	    float baseline = -(int) (paint.ascent() + 0.5f);
+	    int text_height = (int) (baseline + paint.descent() + 0.5f);
+	    Log.d("TEXT","w="+text_width+" h="+text_height);
+	    Bitmap bmp = Bitmap.createBitmap(text_width, text_height, Bitmap.Config.ARGB_8888);
+	    Canvas canvas = new Canvas(bmp);
+	    canvas.drawText(text, text_width/2, baseline, paint);	
+	    
+	    
+        mTextureData = ByteBuffer.allocateDirect(bmp.getHeight() * bmp.getWidth() * 4);
+		
+		mTextureData.order(ByteOrder.BIG_ENDIAN); 
+		IntBuffer ib = mTextureData.asIntBuffer(); 
+		
+		// Convert ARGB -> RGBA 
+		for (int y = bmp.getHeight() - 1; y > -1; y--) 
+		{ 
+			for (int x = 0; x < bmp.getWidth(); x++) 
+			{ 
+				int pix = bmp.getPixel(x, bmp.getHeight() - y - 1); 
+				//int pix = bmp.getRGB(x, bmp.getHeight() - y - 1); 
+				int alpha = ((pix >> 24) & 0xFF); 
+				int red = ((pix >> 16) & 0xFF); 
+				int green = ((pix >> 8) & 0xFF); 
+				int blue = ((pix) & 0xFF); 
+
+				ib.put(red << 24 | green << 16 | blue << 8 | alpha); 
+				//ib.put(0xffffffff);
+			} 
+		} 
+
+		mTextureData.position(0);	
+		mWidth = bmp.getWidth();
+		mHeight = bmp.getHeight();		    
 	}	
 }

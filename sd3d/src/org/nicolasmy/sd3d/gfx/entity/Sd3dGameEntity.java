@@ -3,6 +3,7 @@ package org.nicolasmy.sd3d.gfx.entity;
 import org.nicolasmy.sd3d.gfx.Sd3dMaterial;
 import org.nicolasmy.sd3d.gfx.Sd3dMesh;
 import org.nicolasmy.sd3d.gfx.Sd3dObject;
+import org.nicolasmy.sd3d.interfaces.Sd3dTouchListenerInterface;
 import org.nicolasmy.sd3d.Sd3dGame;
 import org.nicolasmy.sd3d.Sd3dGame.Sd3dInputEvent;
 
@@ -38,11 +39,6 @@ public abstract class Sd3dGameEntity
 	public void onAccelerometerEvent(Sd3dInputEvent event)
 	{	
 	}
-
-	public boolean hasOnTouchEvent;
-	public void onTouchEvent()
-	{	
-	}		
 	
 	public boolean hasOnKeyboardEvent;
 	public void onKeyboardEvent(Sd3dInputEvent event)
@@ -95,7 +91,8 @@ public abstract class Sd3dGameEntity
 	public int mNextTimer;
 	
 	public boolean isMarkForDeletion;
-
+	private Sd3dTouchListenerInterface touchListener;
+	
 	public float[] getPosition()
 	{
 		return this.mPosition;
@@ -132,4 +129,12 @@ public abstract class Sd3dGameEntity
 			game.mRenderer.destroyRenderElement(mObject);
 		}
 	}
+	
+	public void setOnTouchListener(Sd3dTouchListenerInterface sd3dTouchListenerInterface) {
+		this.touchListener =  sd3dTouchListenerInterface;
+	}
+	
+	public Sd3dTouchListenerInterface getOnTouchListener() {
+		return touchListener;
+	}	
 }

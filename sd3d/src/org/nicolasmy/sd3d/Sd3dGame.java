@@ -2,32 +2,21 @@ package org.nicolasmy.sd3d;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-
 import javax.microedition.khronos.opengles.GL11;
-
 import org.nicolasmy.sd3d.Sd3dGLSurfaceView;
-import org.nicolasmy.sd3d.gfx.Sd3dLensFlareEntity;
 import org.nicolasmy.sd3d.gfx.Sd3dLight;
 import org.nicolasmy.sd3d.gfx.Sd3dObject;
 import org.nicolasmy.sd3d.gfx.Sd3dRessourceManager;
 import org.nicolasmy.sd3d.gfx.Sd3dScene;
-import org.nicolasmy.sd3d.gfx.entity.Sd3dCloudsEntity;
-import org.nicolasmy.sd3d.gfx.entity.Sd3dGameChaseCameraEntity;
 import org.nicolasmy.sd3d.gfx.entity.Sd3dGameCameraEntity;
 import org.nicolasmy.sd3d.gfx.entity.Sd3dGameEntity;
-import org.nicolasmy.sd3d.gfx.entity.Sd3dGameLookAroundCameraEntity;
 import org.nicolasmy.sd3d.gfx.entity.Sd3dGameMobileEntity;
-import org.nicolasmy.sd3d.gfx.entity.Sd3dGameSkyBoxEntity;
-import org.nicolasmy.sd3d.gfx.entity.Sd3dGameSkyBoxEntityPerFace;
-import org.nicolasmy.sd3d.gfx.entity.Sd3dPlaneEntity;
 import org.nicolasmy.sd3d.gfx.renderer.Sd3dRenderer;
 import org.nicolasmy.sd3d.gfx.renderer.Sd3dRendererGl20;
 import org.nicolasmy.sd3d.gfx.renderer.Sd3dRendererInterface;
 import org.nicolasmy.sd3d.interfaces.Sd3dCollisionAgainstInterface;
 import org.nicolasmy.sd3d.interfaces.Sd3dFrameProcessorInterface;
 import org.nicolasmy.sd3d.interfaces.Sd3dTouchListenerInterface;
-import org.nicolasmy.sd3d.math.Sd3dVector2d;
 
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -40,7 +29,6 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
-import android.view.View;
 
 public class Sd3dGame
 {	
@@ -48,7 +36,7 @@ public class Sd3dGame
 	public boolean invalidateRenderElements;
 	private ArrayList<Sd3dFrameProcessorInterface> mArray = new ArrayList<Sd3dFrameProcessorInterface>();
 	
-	public Sd3dObject pickAt(int x,int y) {
+	private Sd3dObject pickAt(int x,int y) {
 		return mRenderer.pickAt(x, y, mScene);
 	}
 	
@@ -77,6 +65,21 @@ public class Sd3dGame
 		public ArrayList<Sd3dGameEntity> mEntityList = new ArrayList<Sd3dGameEntity>();
 		//long mLastFrameTime = 0;
 		//long mElapsedTime = 0;
+		
+		public Sd3dGameEntity getEntityByObject(Sd3dObject object)
+		{
+			Sd3dGameEntity entity = null;
+			
+			for (int i = 0;i < mEntityList.size();i++)
+			{
+				if (mEntityList.get(i).mObject == object)
+				{
+					return mEntityList.get(i);
+				}
+			}
+			
+			return entity;
+		}		
 		
 		public void addEntity(Sd3dGameEntity entity)
 		{
@@ -156,16 +159,16 @@ public class Sd3dGame
 							}
 						}						
 					}
-					if (mTouchEvent.isActive)
-					{
-						if (mEntityList.get(i).hasOnTouchEvent)
-						{
-							if (mEntityList.get(i).isReceiveInput())
-							{							
-								mEntityList.get(i).onTouchEvent();
-							}
-						}						
-					}					
+//					if (mTouchEvent.isActive)
+//					{
+//						if (mEntityList.get(i).hasOnTouchEvent)
+//						{
+//							if (mEntityList.get(i).isReceiveInput())
+//							{							
+//								mEntityList.get(i).onTouchEvent();
+//							}
+//						}						
+//					}					
 					
 					if (keyboardEvent != null)
 					{
@@ -276,13 +279,14 @@ public class Sd3dGame
 	public int count = 0;
 	public int calculatedFps = 0;
 	
-	public boolean mHasPick = false;
-	public boolean mHasPrePick = false;
+	//public boolean mHasPick = false;
+	//public boolean mHasPrePick = false;
 	public int mPickCount = 0;
 
 	public int mDeviceRotation;
 	private boolean mShowFps = false;
 	
+	private boolean mHandlePickRequest = true;
 	private long mLastFrameTime = 0;
 	private long mElapsedTime = 0;	
 	
@@ -290,8 +294,9 @@ public class Sd3dGame
 	 * 
 	 */
 	private boolean mHasPickRequest = false;
-	public int mPickX;
-	public int mPickY;	
+	private MotionEvent mPickRequestEvent;
+	//public int mPickX;
+	//public int mPickY;	
 	
 	public boolean isShowFps() {
 		return mShowFps;
@@ -345,6 +350,18 @@ public class Sd3dGame
 		}
 
 		if (mHasPickRequest){
+			
+			Sd3dObject obj = pickAt((int)mPickRequestEvent.getX(), (int)mPickRequestEvent.getY());
+			if (obj == null) {
+				Log.d("MineBoard","Object not found");
+			}			
+			Sd3dGameEntity entity = this.mGameEntityManager.getEntityByObject(obj);
+			if ((entity != null)&&(entity.getOnTouchListener() != null))
+				entity.getOnTouchListener().onTouch(mPickRequestEvent);
+			
+			if (entity == null) {
+				Log.d("MineBoard","Entity not found");
+			}
 			mHasPickRequest = false;
 		}
 
@@ -409,9 +426,8 @@ public class Sd3dGame
 			mTouchListener.onTouch(event);
 		}
 		
-		if (mHasPickRequest == false){
-			this.mPickX = (int)event.getX(0);
-			this.mPickY = (int)event.getY(0);
+		if ((mHandlePickRequest && mHasPickRequest) == false){
+			mPickRequestEvent = event;
 			mHasPickRequest = true;
 		}
 		
@@ -480,6 +496,8 @@ public class Sd3dGame
 		}
 		return null;
 	}
+	
+	
 }
 
 

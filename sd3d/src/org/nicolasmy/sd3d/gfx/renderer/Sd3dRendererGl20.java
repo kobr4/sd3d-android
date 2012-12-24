@@ -1447,7 +1447,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			
 
 			
-			GLES20.glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+			GLES20.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 			
 
 	        GLES20.glFrontFace(GL11.GL_CW);
@@ -1755,53 +1755,18 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
     	{
     		Log.e("Sd3d","Warning expected shader file : "+"shaders/default_fs.gl"+" not present in <asset> folder.");    		
     	}
-    	
-    	/*
-    	defaultShader = new Sd3dShader(this.vertexShader,this.fragmentShader);
-    	defaultShader.register();
- 		
-    	
-    	textureOnlyShader = new Sd3dShader(Sd3dRessourceManager.getManager().getText("shaders/textureonly_vs.gl"),
-    			Sd3dRessourceManager.getManager().getText("shaders/textureonly_fs.gl"));
-    	textureOnlyShader.register();
-    	
-    	
-    	colorOnlyShader = new Sd3dShader(Sd3dRessourceManager.getManager().getText("shaders/coloronly_vs.gl"),
-    			Sd3dRessourceManager.getManager().getText("shaders/coloronly_fs.gl"));
-    	colorOnlyShader.register();    	
-    	
-		pickingShader = new Sd3dShader(Sd3dRessourceManager.getManager().getText("shaders/coloronly_vs.gl"),
-				Sd3dRessourceManager.getManager().getText("shaders/coloronly_fs.gl"));
-		pickingShader.register();
-    	*/
-
-//    	if (defaultShader != null) {
-//    		defaultShader.unregister();
-//    	}
-    	
+    	    	
     	defaultShader = new Sd3dShader(this.vertexShader,this.fragmentShader);
     	defaultShader.register();    
     	
-//    	if (textureOnlyShader != null) {
-//    		textureOnlyShader.unregister();
-//    	}    	
     	
     	textureOnlyShader = new Sd3dShader(Sd3dRessourceManager.getManager().getText("shaders/textureonly_vs.gl"),
     			Sd3dRessourceManager.getManager().getText("shaders/textureonly_fs.gl"));
-    	textureOnlyShader.register();
-    	
-    	
-//    	if (colorOnlyShader != null) {
-//    		colorOnlyShader.unregister();
-//    	}      	
+    	textureOnlyShader.register();      	
     	
     	colorOnlyShader = new Sd3dShader(Sd3dRessourceManager.getManager().getText("shaders/coloronly_vs.gl"),
     			Sd3dRessourceManager.getManager().getText("shaders/coloronly_fs.gl"));
     	colorOnlyShader.register();    	    	
-    	
-//    	if (pickingShader != null) {
-//    		pickingShader.unregister();
-//    	}        	
     	
     	pickingShader = new Sd3dShader(Sd3dRessourceManager.getManager().getText("shaders/coloronly_vs.gl"),
 				Sd3dRessourceManager.getManager().getText("shaders/coloronly_fs.gl"));
@@ -1812,12 +1777,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
     		Log.d("Sd3dRendererGL20","Deleting picking framebuffer");
     		pickingFrameBuffer.release();
     		pickingFrameBuffer = null;
-    	}
-    	
-		//pickingFrameBuffer = new Sd3dFrameBuffer();
-		//pickingFrameBuffer.init(screenWidth, screenHeight);
-    	
-    	
+    	}    	
 
  		GameHolder.mGame.invalidateRenderElements = true;
     }	
@@ -2017,7 +1977,6 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	}	
 	
 	public Sd3dObject pickAt(int x, int y, Sd3dScene scene){	
-		
     	if (pickingFrameBuffer == null){
 			pickingFrameBuffer = new Sd3dFrameBuffer();
 			pickingFrameBuffer.init(screenWidth, screenHeight);
@@ -2038,6 +1997,8 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		Log.d("Sd3dRendererGl20","Picked color [ "+x+" , "+y+" ] = "+buffer.get(0)+" ERROR="+GLES20.glGetError() );
 		
 		pickingFrameBuffer.unbind(this.screenWidth, this.screenHeight);
+		GLES20.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		
 		
 		int r = buffer.get(0) & 0xff;
 		int g = (buffer.get(0) & 0xff00) >> 8;
