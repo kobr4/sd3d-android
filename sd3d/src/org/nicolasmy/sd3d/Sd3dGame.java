@@ -125,7 +125,8 @@ public class Sd3dGame
 							  mEntityList.get(i).mObject.mRenderElement = null;
 							for (int l = 0;l < mEntityList.get(i).mObject.mMaterial.length;l++) {
 							  mEntityList.get(i).mObject.mMaterial[l].mColorName = 0;
-							  mEntityList.get(i).mObject.mMaterial[l].mTextureName = 0;
+							  mEntityList.get(i).mObject.mMaterial[l].mTextureName[0] = 0;
+							  mEntityList.get(i).mObject.mMaterial[l].mTextureName[1] = 0;
 							}
 							if (mEntityList.get(i).mObject.mIsPickable)
 							{

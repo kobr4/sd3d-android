@@ -4,10 +4,10 @@ import org.nicolasmy.sd3d.Sd3dGame.Sd3dInputEvent;
 
 public class Sd3dGameLookAroundCameraEntity extends Sd3dGameCameraEntity {
 	public Sd3dGameEntity mTargetEntity;
-	float mDistance = -(float)5.0;
+	float mDistance = -(float)20.0;
 	float mOffsetOrientation[];
 	
-	public Sd3dGameLookAroundCameraEntity(Sd3dGameEntity entity)
+	public Sd3dGameLookAroundCameraEntity(float distance, Sd3dGameEntity entity)
 	{
 		this.isActive = true;
 		this.hasOnProcessFrame = true;
@@ -16,14 +16,16 @@ public class Sd3dGameLookAroundCameraEntity extends Sd3dGameCameraEntity {
 		this.mOrientation[2] = 0.f;	
 		
 		this.mOrientation[1] = mTargetEntity.mOrientation[1];
-		this.mOrientation[0] = 45;
+		
+		//vu 3/4
+		//this.mOrientation[0] = 45;
 		
 		mOffsetOrientation = new float [3];
 		
 		
 		this.mOffsetOrientation[1] =  this.mOffsetOrientation[1] + 180.f;
 		this.mOrientation[1] =  this.mOrientation[1] + 180.f;			
-		
+		mDistance = -distance;
 		//this.mPosition[1] = mTargetEntity.mPosition[1] = 1.f;
 	}	
 	
@@ -56,7 +58,9 @@ public class Sd3dGameLookAroundCameraEntity extends Sd3dGameCameraEntity {
 		double y = dirY * java.lang.Math.cos(mOffsetOrientation[1]* 3.1415/180) + dirX * java.lang.Math.sin(mOffsetOrientation[1] * 3.1415/180);
 		
 		this.mPosition[0] = mTargetEntity.mPosition[0] - mDistance * (float)x;
-		this.mPosition[1] = mTargetEntity.mPosition[1] - mDistance;
+		
+		//vu 3/4
+		//this.mPosition[1] = mTargetEntity.mPosition[1] - mDistance;
 		this.mPosition[2] = mTargetEntity.mPosition[2] - mDistance * (float)y;
 		
 		/*

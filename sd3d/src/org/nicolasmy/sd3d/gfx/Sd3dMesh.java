@@ -17,6 +17,7 @@ import org.nicolasmy.sd3d.MeshSerializationBean;
 import org.nicolasmy.sd3d.interfaces.Sd3dRendererElementInterface;
 import org.nicolasmy.sd3d.math.Sd3dMatrix;
 import org.nicolasmy.sd3d.math.Sd3dVector;
+import org.nicolasmy.sd3d.math.Sd3dVector2d;
 
 import android.util.Log;
 
@@ -25,6 +26,7 @@ public class Sd3dMesh
 	public static HashMap<String, Object> meshCache = new HashMap<String,Object>();
 	public final static int nbFloatPerVertex = 3 + 3 + 2;
 	public FloatBuffer mVertices;
+	public FloatBuffer mTangentsBinormals;
 	//public FloatBuffer mNormals;
 	public CharBuffer mIndices;
 	//public FloatBuffer mTexCoords;
@@ -497,6 +499,30 @@ public class Sd3dMesh
 		mVertices.put(indice * Sd3dMesh.nbFloatPerVertex + 3,nx);
 		mVertices.put(indice * Sd3dMesh.nbFloatPerVertex + 4,ny);
 		mVertices.put(indice * Sd3dMesh.nbFloatPerVertex + 5,nz);
+	}	
+
+	public void addTangent(int indice,float nx,float ny,float nz)
+	{
+		mTangentsBinormals.put(indice * 6,nx);
+		mTangentsBinormals.put(indice * 6 + 1,ny);
+		mTangentsBinormals.put(indice * 6 + 2,nz);
+	}
+
+	public void addBinormal(int indice,float nx,float ny,float nz)
+	{
+		mTangentsBinormals.put(indice * 6 + 3,nx);
+		mTangentsBinormals.put(indice * 6 + 4,ny);
+		mTangentsBinormals.put(indice * 6 + 5,nz);
+	}
+	
+	public float getTangent(int indice, int element)
+	{
+		return mTangentsBinormals.get(indice * 6 + element);
+	}
+	
+	public float getBinormal(int indice, int element)
+	{
+		return mTangentsBinormals.get(indice * 6 + 3 + element);
 	}	
 	
 	public float getNormal(int indice, int element)
@@ -1121,17 +1147,116 @@ public class Sd3dMesh
 			this.addNormal(c,res.get(0),res.get(1),res.get(2));		
 			*/	
 			
+			/*
 			this.addNormal(a,getNormal(a,0)+res.get(0)/3.f,getNormal(a,1)+res.get(1)/3.f,getNormal(a,2)+res.get(2)/3.f);
 			this.addNormal(b,getNormal(b,0)+res.get(0)/3.f,getNormal(b,1)+res.get(1)/3.f,getNormal(b,2)+res.get(2)/3.f);
 			this.addNormal(c,getNormal(c,0)+res.get(0)/3.f,getNormal(c,1)+res.get(1)/3.f,getNormal(c,2)+res.get(2)/3.f);			
-			
+			*/
+			this.addNormal(a,getNormal(a,0)+res.get(0),getNormal(a,1)+res.get(1),getNormal(a,2)+res.get(2));
+			this.addNormal(b,getNormal(b,0)+res.get(0),getNormal(b,1)+res.get(1),getNormal(b,2)+res.get(2));
+			this.addNormal(c,getNormal(c,0)+res.get(0),getNormal(c,1)+res.get(1),getNormal(c,2)+res.get(2));				
 		}
 		
+		
+		Sd3dVector normal = new Sd3dVector();
+		for (int i = 0;i < this.mVertices.capacity() / Sd3dMesh.nbFloatPerVertex;i++)
+		{		
+			normal.set(0, this.mVertices.get(i * Sd3dMesh.nbFloatPerVertex + 3));
+			normal.set(1, this.mVertices.get(i * Sd3dMesh.nbFloatPerVertex + 4));
+			normal.set(2, this.mVertices.get(i * Sd3dMesh.nbFloatPerVertex + 5));		
+			normal.normalize();
+			this.mVertices.put(i * Sd3dMesh.nbFloatPerVertex + 3, normal.get(0));
+			this.mVertices.put(i * Sd3dMesh.nbFloatPerVertex + 4, normal.get(1));
+			this.mVertices.put(i * Sd3dMesh.nbFloatPerVertex + 5, normal.get(2));
+		}
 		this.mIndices.position(0);
 		//this.mNormals.position(0);
 		this.mVertices.position(0);
 	}
 	
+	
+	public void generateNormalsTangentsBinormals()
+	{
+		generateNormals();
+		
+		this.mTangentsBinormals = FloatBuffer.allocate(this.mVertices.capacity() / Sd3dMesh.nbFloatPerVertex * 6);
+		
+		int trianglecount = this.mIndices.capacity()/3;		
+		this.mIndices.position(0);
+		
+		Sd3dVector normal = new Sd3dVector();
+		Sd3dVector tangent = new Sd3dVector();
+		Sd3dVector binormal = new Sd3dVector();
+		Sd3dVector2d texCoords0 = new Sd3dVector2d();
+		Sd3dVector2d texCoords1 = new Sd3dVector2d();
+		Sd3dVector v0 = new Sd3dVector();
+		Sd3dVector v1 = new Sd3dVector();		
+		
+		for (int i = 0;i < trianglecount;i++)
+		{
+			int a,b,c;			
+			a = this.mIndices.get();
+			b = this.mIndices.get();
+			c = this.mIndices.get();			
+			
+			// 1 side 
+			v0.setFromVertice(this.mVertices,a);
+			v1.setFromVertice(this.mVertices,b);			
+			
+			normal.setFromNormal(this.mVertices,a);
+			texCoords0.setFromTexCoords(this.mVertices, a);
+			texCoords0.setFromTexCoords(this.mVertices, b);
+			
+			tangent.set(0, v0.get(0) * texCoords1.getY() + v1.get(0) * -texCoords0.getY());
+			tangent.set(1, v0.get(1) * texCoords1.getY() + v1.get(1) * -texCoords0.getY());
+			tangent.set(2, v0.get(2) * texCoords1.getY() + v1.get(2) * -texCoords0.getY());
+			
+			tangent.normalize();
+			Sd3dVector.cross(binormal, normal, tangent);
+			
+			addTangent(a,getTangent(a,0)+tangent.get(0)/3.f,getTangent(a,1)+tangent.get(1)/3.f,getTangent(a,2)+tangent.get(2)/3.f);
+			addBinormal(a,getBinormal(a,0)+binormal.get(0)/3.f,getBinormal(a,1)+tangent.get(1)/3.f,getTangent(a,2)+tangent.get(2)/3.f);
+			
+			// 2 side 
+			v0.setFromVertice(this.mVertices,b);
+			v1.setFromVertice(this.mVertices,c);			
+			
+			normal.setFromNormal(this.mVertices,b);
+			texCoords0.setFromTexCoords(this.mVertices, b);
+			texCoords0.setFromTexCoords(this.mVertices, c);
+			
+			tangent.set(0, v0.get(0) * texCoords1.getY() + v1.get(0) * -texCoords0.getY());
+			tangent.set(1, v0.get(1) * texCoords1.getY() + v1.get(1) * -texCoords0.getY());
+			tangent.set(2, v0.get(2) * texCoords1.getY() + v1.get(2) * -texCoords0.getY());
+			
+			tangent.normalize();
+			Sd3dVector.cross(binormal, normal, tangent);
+			
+			addTangent(b,getTangent(b,0)+tangent.get(0)/3.f,getTangent(b,1)+tangent.get(1)/3.f,getTangent(b,2)+tangent.get(2)/3.f);
+			addBinormal(b,getBinormal(b,0)+binormal.get(0)/3.f,getBinormal(b,1)+tangent.get(1)/3.f,getTangent(b,2)+tangent.get(2)/3.f);			
+			
+			// 3 side 
+			v0.setFromVertice(this.mVertices,c);
+			v1.setFromVertice(this.mVertices,a);			
+			
+			normal.setFromNormal(this.mVertices,c);
+			texCoords0.setFromTexCoords(this.mVertices, c);
+			texCoords0.setFromTexCoords(this.mVertices, a);
+			
+			tangent.set(0, v0.get(0) * texCoords1.getY() + v1.get(0) * -texCoords0.getY());
+			tangent.set(1, v0.get(1) * texCoords1.getY() + v1.get(1) * -texCoords0.getY());
+			tangent.set(2, v0.get(2) * texCoords1.getY() + v1.get(2) * -texCoords0.getY());
+			
+			tangent.normalize();
+			Sd3dVector.cross(binormal, normal, tangent);
+			
+			addTangent(c,getTangent(c,0)+tangent.get(0)/3.f,getTangent(c,1)+tangent.get(1)/3.f,getTangent(c,2)+tangent.get(2)/3.f);
+			addBinormal(c,getBinormal(c,0)+binormal.get(0)/3.f,getBinormal(c,1)+tangent.get(1)/3.f,getTangent(c,2)+tangent.get(2)/3.f);				
+		}
+		
+		this.mIndices.position(0);
+		this.mTangentsBinormals.position(0);
+	}
 	
 	/**
 	 * Apply a 3x3 matrix to mesh vertices position and normal

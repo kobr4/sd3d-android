@@ -17,8 +17,8 @@ public abstract class Sd3dGameEntity
 {
 	public String mName;
 
-	protected float mPosition[];
-	protected float mOrientation[];
+	protected float mPosition[] = new float[3];
+	protected float mOrientation[] = new float[3];
 	
 	public boolean isCamera;
 	

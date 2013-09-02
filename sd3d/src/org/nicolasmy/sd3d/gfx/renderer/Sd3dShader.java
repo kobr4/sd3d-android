@@ -39,6 +39,8 @@ public class Sd3dShader {
 	public static final int vertexColorHandle = 2;
 	public static final int vertexNormalHandle = 3;
 	public static final int vertexTexCoordHandle = 4;	
+	public static final int vertexTangentHandle = 5;
+	public static final int vertexBinormalHandle = 6;
     
     /* PRIVATE MEMBERS */
 	private String vertexShader;
@@ -288,6 +290,8 @@ public class Sd3dShader {
 		    GLES20.glBindAttribLocation(mProgramHandle, vertexColorHandle, "a_Color");
 		    GLES20.glBindAttribLocation(mProgramHandle, vertexTexCoordHandle, "a_Texcoords");
 		    GLES20.glBindAttribLocation(mProgramHandle, vertexNormalHandle, "a_Normal");
+		    GLES20.glBindAttribLocation(mProgramHandle, vertexTangentHandle, "a_Tangent");		    
+		    GLES20.glBindAttribLocation(mProgramHandle, vertexBinormalHandle, "a_Binormal");
 		    
 		    // Link the two shaders together into a program.
 		    GLES20.glLinkProgram(mProgramHandle);

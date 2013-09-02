@@ -1,5 +1,9 @@
 package org.nicolasmy.sd3d.math;
 
+import java.nio.FloatBuffer;
+
+import org.nicolasmy.sd3d.gfx.Sd3dMesh;
+
 
 public class Sd3dVector2d {
 	float mT[];
@@ -63,4 +67,10 @@ public class Sd3dVector2d {
 	{
 		return v1.getX()*v2.getX()+v1.getY()*v2.getY();
 	}
+	
+	public void setFromTexCoords(FloatBuffer fb,int indice)
+	{
+		mT[0] = fb.get(indice*Sd3dMesh.nbFloatPerVertex+6);
+		mT[1] = fb.get(indice*Sd3dMesh.nbFloatPerVertex+7);		
+	}		
 }

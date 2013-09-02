@@ -24,9 +24,10 @@ import android.util.Log;
 public class Sd3dMaterial
 {
 	public ByteBuffer mTextureData;
+	public ByteBuffer mSecondaryTextureData;
 	public int mWidth;
 	public int mHeight;
-	public int mTextureName;
+	public int mTextureName[] = new int[2];
 	public FloatBuffer mColors;	
 	public boolean alphaBlending;
 	public boolean alphaTest;

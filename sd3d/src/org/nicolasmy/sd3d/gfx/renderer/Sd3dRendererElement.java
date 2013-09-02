@@ -16,7 +16,8 @@ public class Sd3dRendererElement {
 	public int mIndiceCount;
 	//public int mTexCoordBufferName;	
 	//public int mColorBufferName;
-	public int mTextureName;
+	public int mTangentBinormalBufferName;
+	public int mTextureName[] = new int[2];
 	public float mScale;
 	public float mPosition[];
 	public float mOrientation[];

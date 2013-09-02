@@ -32,7 +32,6 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	public enum ALIGN
 	{
 		TOP,
-		BOTTOM,
 		LEFT,
 		RIGHT,
 		CENTER
@@ -133,6 +132,14 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			element.mVertexBufferName = buffer.get(0);
 		}
 		else element.mVertexBufferName = 0;
+	
+		if (mesh.mTangentsBinormals != null)
+		{
+			GLES20.glGenBuffers(1,buffer);
+			GLES20.glBindBuffer(GL11.GL_ARRAY_BUFFER, buffer.get(0));
+			GLES20.glBufferData(GL11.GL_ARRAY_BUFFER,mesh.mTangentsBinormals.capacity() * 4,mesh.mTangentsBinormals,GL11.GL_STATIC_DRAW);
+			element.mTangentBinormalBufferName = buffer.get(0);
+		} else element.mTangentBinormalBufferName = 0;			
 		
 		/*
 		if (mesh.mNormals != null)
@@ -195,10 +202,8 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		//} else mColorBufferName = 0;	
 		} else material.mColorName = 0;
 	
-		if (material.mTextureName == 0)
-		{
-			if (material.mTextureData != null)
-			{
+		if (material.mTextureName[0] == 0) {
+			if (material.mTextureData != null) {
 				GLES20.glGenTextures(1, buffer); 
 				GLES20.glBindTexture(GL11.GL_TEXTURE_2D, buffer.get(0)); 
 				//GLES20.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
@@ -208,15 +213,36 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 				GLES20.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR); 
 				
 				
-				element.mTextureName = buffer.get(0);
-				material.mTextureName = buffer.get(0);
+				element.mTextureName[0] = buffer.get(0);
+				
+				
+				material.mTextureName[0] = buffer.get(0);
 			}
+		} else {
+			element.mTextureName[0] = material.mTextureName[0];
 		}
 		
-		else
-		{
-			element.mTextureName = material.mTextureName;
-		}
+		if (material.mTextureName[1] == 0) {
+			if (material.mSecondaryTextureData != null) {
+				GLES20.glGenTextures(1, buffer); 
+				GLES20.glBindTexture(GL11.GL_TEXTURE_2D, buffer.get(0)); 
+				//GLES20.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
+				GLES20.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA,
+						//material.mWidth, material.mHeight, 
+						//TODO remove that shit !
+						1024, 1024,
+						0, 
+						GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, material.mSecondaryTextureData);
+				GLES20.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR); 
+				GLES20.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR); 
+				
+				
+				element.mTextureName[1] = buffer.get(0);
+				material.mTextureName[1] = buffer.get(0);
+			}
+		} else {
+			element.mTextureName[1] = material.mTextureName[1];
+		}		
 		
 		
 		if (GLES20.glGetError() != GLES20.GL_NO_ERROR)
@@ -368,12 +394,20 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	{
 		int buffer[] = new int[1];
 		
-		if (element.mTextureName != 0)
+		if (element.mTextureName[0] != 0)
 		{
-			buffer[0] = element.mTextureName;
+			buffer[0] = element.mTextureName[0];
 			GLES20.glDeleteBuffers(1, buffer, 0);
-			element.mTextureName = 0;
+			element.mTextureName[0] = 0;
 		}
+		
+		if (element.mTextureName[1] != 0)
+		{
+			buffer[0] = element.mTextureName[1];
+			GLES20.glDeleteBuffers(1, buffer, 0);
+			element.mTextureName[1] = 0;
+		}
+				
 		
 		
 		if (element.mObject != null)
@@ -897,6 +931,16 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		    
 		}
 
+		if (element.mTangentBinormalBufferName != 0)
+		{
+			GLES20.glBindBuffer(GL11.GL_ARRAY_BUFFER, element.mTangentBinormalBufferName);    
+			//GLES20.glVertexAttribPointer(this.mPositionHandle, 3, GLES20.GL_FLOAT, false, 0, 0);
+			GLES20.glVertexAttribPointer(Sd3dShader.vertexTangentHandle, 3, GLES20.GL_FLOAT, false, 6*4, 0);
+		    GLES20.glEnableVertexAttribArray(Sd3dShader.vertexTangentHandle);
+		    
+			GLES20.glVertexAttribPointer(Sd3dShader.vertexBinormalHandle, 3, GLES20.GL_FLOAT, false, 6*4, 3*4);
+		    GLES20.glEnableVertexAttribArray(Sd3dShader.vertexBinormalHandle);	
+		}		
 		
 		
 		/*
@@ -939,10 +983,10 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			shader.renderStateVector.put(1, 0);
 		}
 	
-		if (element.mTextureName != 0)
+		if (element.mTextureName[0] != 0)
 		{
 			GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-			GLES20.glBindTexture(GL11.GL_TEXTURE_2D, element.mTextureName);
+			GLES20.glBindTexture(GL11.GL_TEXTURE_2D, element.mTextureName[0]);
 			//GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,shadowMapping.renderTex[0]);
 			shader.renderStateVector.put(0, 1);
 		} 	
@@ -950,6 +994,20 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		{
 			shader.renderStateVector.put(0, 0);
 		}
+		
+		if (element.mTextureName[1] != 0)
+		{
+			GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
+			GLES20.glBindTexture(GL11.GL_TEXTURE_2D, element.mTextureName[1]);
+			GLES20.glUniform1i(GLES20.glGetUniformLocation(shader.getProgramHandle(), "secondary_texture"), 1);			
+			//GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,shadowMapping.renderTex[0]);
+			shader.renderStateVector.put(0, 1);
+		} 	
+		else 
+		{
+			shader.renderStateVector.put(0, 0);
+		}
+				
 		
 		if (this.useShadowMapping)
 		{
@@ -1370,6 +1428,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		if (this.sampling != null)
 			this.sampling.onRenderScene();			
 		
+		
 		if (this.clearScreen)
 			GLES20.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		else
@@ -1447,7 +1506,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			
 
 			
-			GLES20.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+			//GLES20.glClearColor(0.4f, 0.4f, 0.0f, 1.0f);
 			
 
 	        GLES20.glFrontFace(GL11.GL_CW);
@@ -1523,13 +1582,15 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	
 	public void renderText(Sd3dShader shader)
 	{
-		if (this.mBmpFont.mTextureName == 0)
+		if (this.mBmpFont.mTextureName == 0){
 			this.registerFontMaterial();
+		}
 			//this.mBmpFont.registerTexture();
 			
 		
 		if (this.mBmpFont.mMesh[0].mVertices.position() != 0)
 		{			
+			
 			//OpenGL stuffs	
 			Matrix.setIdentityM(shader.modelMatrix, 0);
 			Matrix.setIdentityM(shader.viewMatrix, 0);
@@ -1717,7 +1778,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
         final float right = ratio;
         final float bottom = -1.0f;
         final float top = 1.0f;
-        final float near = 1.5f;
+        final float near = 2.0f;
         final float far = 1000.0f;
      
         Matrix.frustumM(defaultShader.projectionMatrix, 0, left, right, bottom, top, near, far);    	

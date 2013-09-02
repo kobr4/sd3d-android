@@ -134,8 +134,11 @@ public class Sd3dRenderer implements Sd3dRendererInterface
 			mGl.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR); 
 			mGl.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR); 
 			
-			
-			element.mTextureName = buffer.get(0);
+			if (element.mTextureName[0] != 0) {
+				element.mTextureName[1] = buffer.get(0);
+			} else {
+			element.mTextureName[0] = buffer.get(0);
+			}
 			
 		}
 		
@@ -251,13 +254,19 @@ public class Sd3dRenderer implements Sd3dRendererInterface
 	{
 		int buffer[] = new int[1];
 		
-		if (element.mTextureName != 0)
+		if (element.mTextureName[0] != 0)
 		{
-			buffer[0] = element.mTextureName;
+			buffer[0] = element.mTextureName[0];
 			mGl.glDeleteBuffers(1, buffer, 0);
-			element.mTextureName = 0;
+			element.mTextureName[0] = 0;
 		}
-		
+
+		if (element.mTextureName[1] != 0)
+		{
+			buffer[0] = element.mTextureName[1];
+			mGl.glDeleteBuffers(1, buffer, 0);
+			element.mTextureName[1] = 0;
+		}		
 		
 		if (element.mObject != null)
 		{
@@ -467,11 +476,17 @@ public class Sd3dRenderer implements Sd3dRendererInterface
 		}
 	 
 	
-		if (element.mTextureName != 0)
+		if (element.mTextureName[0] != 0)
 		{
-			mGl.glBindTexture(GL11.GL_TEXTURE_2D, element.mTextureName);	
+			mGl.glBindTexture(GL11.GL_TEXTURE_2D, element.mTextureName[0]);	
 		} //else mGl.glBindTexture(GL11.GL_TEXTURE_2D, 0);	
 		else mGl.glDisable(GL11.GL_TEXTURE_2D);
+		
+		if (element.mTextureName[1] != 0)
+		{
+			mGl.glBindTexture(GL11.GL_TEXTURE_2D, element.mTextureName[1]);	
+		} //else mGl.glBindTexture(GL11.GL_TEXTURE_2D, 0);	
+		else mGl.glDisable(GL11.GL_TEXTURE_2D);		
 		
 		
 		if (element.mAlphaTest)
