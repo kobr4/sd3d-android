@@ -58,6 +58,11 @@ public class Sd3dVector2d {
 		return (float)java.lang.Math.sqrt(this.getX()*this.getX()+(this.getY()*this.getY()));
 	}
 	
+	public static void sub(Sd3dVector2d res,Sd3dVector2d v1,Sd3dVector2d v2)
+	{
+		res.set(v1.getX()-v2.getX(),v1.getY()-v2.getY());
+	}	
+	
 	public static float distance(Sd3dVector2d v1,Sd3dVector2d v2)
 	{
 		return (float)java.lang.Math.sqrt( (v2.getX()-v1.getX())*(v2.getX()-v1.getX())+(v2.getY()-v1.getY())*(v2.getY()-v1.getY()));
@@ -72,5 +77,11 @@ public class Sd3dVector2d {
 	{
 		mT[0] = fb.get(indice*Sd3dMesh.nbFloatPerVertex+6);
 		mT[1] = fb.get(indice*Sd3dMesh.nbFloatPerVertex+7);		
-	}		
+	}	
+	
+	public void normalize() {
+		float l = length();
+		mT[0] = mT[0] / l;
+		mT[1] = mT[1] / l;
+	}
 }

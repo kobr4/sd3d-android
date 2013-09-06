@@ -57,6 +57,7 @@ public abstract class Sd3dGameEntity
 		hasObject = true;
 		mObject = obj;
 		obj.mPosition = mPosition;
+		obj.mRotation = mOrientation;
 	}
 	
 	public void mergeObject(Sd3dObject obj)

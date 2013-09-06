@@ -941,6 +941,115 @@ public class Sd3dMesh
 		Log.d("mergeVertexIndices()","Vertex merged: "+countmerge);
 	}
 	
+	public void mergeNormals() {
+		FloatBuffer normalAccumulationBuffer = FloatBuffer.allocate(mVertices.capacity());
+		for (int i = 0; i < mIndices.capacity();i++)
+		{
+			int indice = mIndices.get(i);
+			int offset_indice = indice * Sd3dMesh.nbFloatPerVertex;
+			
+			for (int j = 0;j < mIndices.capacity();j++)
+			{
+				char indice2 = mIndices.get(j);
+				int offset_indice2 = indice2 * Sd3dMesh.nbFloatPerVertex;
+				float x = mVertices.get(indice * Sd3dMesh.nbFloatPerVertex);
+				float y = mVertices.get(indice * Sd3dMesh.nbFloatPerVertex + 1);
+				float z = mVertices.get(indice * Sd3dMesh.nbFloatPerVertex + 2);
+				
+				float x2 = mVertices.get(indice2 * Sd3dMesh.nbFloatPerVertex);
+				float y2 = mVertices.get(indice2 * Sd3dMesh.nbFloatPerVertex + 1);
+				float z2 = mVertices.get(indice2 * Sd3dMesh.nbFloatPerVertex + 2);
+				
+				
+				
+				if ((x == x2)&&(y==y2)&&(z==z2))
+				{
+					//mIndices.put(i, indice2);
+					//countmerge++;
+					normalAccumulationBuffer.put(offset_indice2 + 3, normalAccumulationBuffer.get(offset_indice2 + 3) + mVertices.get(offset_indice + 3));
+					normalAccumulationBuffer.put(offset_indice2 + 4, normalAccumulationBuffer.get(offset_indice2 + 4) + mVertices.get(offset_indice + 4));
+					normalAccumulationBuffer.put(offset_indice2 + 5, normalAccumulationBuffer.get(offset_indice2 + 5) + mVertices.get(offset_indice + 5));					
+				}				
+			}
+		}
+		
+		Sd3dVector normal = new Sd3dVector();
+		for (int i = 0; i < mIndices.capacity();i++)
+		{
+			int indice = mIndices.get(i);
+			int offset_indice = indice * Sd3dMesh.nbFloatPerVertex;
+			normal.set(0,normalAccumulationBuffer.get(offset_indice + 3));
+			normal.set(1,normalAccumulationBuffer.get(offset_indice + 4));
+			normal.set(2,normalAccumulationBuffer.get(offset_indice + 5));
+			normal.normalize();
+			mVertices.put(offset_indice + 3,normal.get(0));
+			mVertices.put(offset_indice + 4,normal.get(1));
+			mVertices.put(offset_indice + 5,normal.get(2));		
+		}
+	}
+	
+	public void mergeTangents() {
+		
+		FloatBuffer normalAccumulationBuffer = FloatBuffer.allocate(mTangentsBinormals.capacity());
+		for (int i = 0; i < mIndices.capacity();i++)
+		{
+			int indice = mIndices.get(i);
+			int offset_indice = indice * 6;
+			
+			for (int j = 0;j < mIndices.capacity();j++)
+			{
+				char indice2 = mIndices.get(j);
+				int offset_indice2 = indice2 * 6;
+				float x = mVertices.get(indice * Sd3dMesh.nbFloatPerVertex);
+				float y = mVertices.get(indice * Sd3dMesh.nbFloatPerVertex + 1);
+				float z = mVertices.get(indice * Sd3dMesh.nbFloatPerVertex + 2);
+				
+				float x2 = mVertices.get(indice2 * Sd3dMesh.nbFloatPerVertex);
+				float y2 = mVertices.get(indice2 * Sd3dMesh.nbFloatPerVertex + 1);
+				float z2 = mVertices.get(indice2 * Sd3dMesh.nbFloatPerVertex + 2);
+				
+				
+				
+				if ((x == x2)&&(y==y2)&&(z==z2))
+				{
+					//mIndices.put(i, indice2);
+					//countmerge++;
+					normalAccumulationBuffer.put(offset_indice2 + 0, normalAccumulationBuffer.get(offset_indice2 + 0) + mTangentsBinormals.get(offset_indice + 0));
+					normalAccumulationBuffer.put(offset_indice2 + 1, normalAccumulationBuffer.get(offset_indice2 + 1) + mTangentsBinormals.get(offset_indice + 1));
+					normalAccumulationBuffer.put(offset_indice2 + 2, normalAccumulationBuffer.get(offset_indice2 + 2) + mTangentsBinormals.get(offset_indice + 2));		
+					
+					normalAccumulationBuffer.put(offset_indice2 + 3, normalAccumulationBuffer.get(offset_indice2 + 3) + mTangentsBinormals.get(offset_indice + 3));
+					normalAccumulationBuffer.put(offset_indice2 + 4, normalAccumulationBuffer.get(offset_indice2 + 4) + mTangentsBinormals.get(offset_indice + 4));
+					normalAccumulationBuffer.put(offset_indice2 + 5, normalAccumulationBuffer.get(offset_indice2 + 5) + mTangentsBinormals.get(offset_indice + 5));						
+				}				
+			}
+		}
+		
+		Sd3dVector normal = new Sd3dVector();
+		for (int i = 0; i < mIndices.capacity();i++)
+		{
+			int indice = mIndices.get(i);
+			int offset_indice = indice * 6;
+			normal.set(0,normalAccumulationBuffer.get(offset_indice + 0));
+			normal.set(1,normalAccumulationBuffer.get(offset_indice + 1));
+			normal.set(2,normalAccumulationBuffer.get(offset_indice + 2));
+			normal.normalize();
+			mTangentsBinormals.put(offset_indice + 0,normal.get(0));
+			mTangentsBinormals.put(offset_indice + 1,normal.get(1));
+			mTangentsBinormals.put(offset_indice + 2,normal.get(2));		
+			
+			normal.set(0,normalAccumulationBuffer.get(offset_indice + 3));
+			normal.set(1,normalAccumulationBuffer.get(offset_indice + 4));
+			normal.set(2,normalAccumulationBuffer.get(offset_indice + 5));
+			normal.normalize();
+			mTangentsBinormals.put(offset_indice + 3,normal.get(0));
+			mTangentsBinormals.put(offset_indice + 4,normal.get(1));
+			mTangentsBinormals.put(offset_indice + 5,normal.get(2));				
+			
+		}
+	}	
+	
+	
 	public void copy(Sd3dMesh mesh)
 	{
 		mIndices = CharBuffer.allocate(mesh.mIndices.position());
@@ -1125,35 +1234,25 @@ public class Sd3dMesh
 			Sd3dVector.sub(vm1, v1, v0);
 			Sd3dVector.sub(vm2, v2, v0);
 			Sd3dVector.cross(res, vm1, vm2);
-			
+			if (res.length() == 0.f) {
+				Log.d("generateNormals()","normal is null !");
+			}
 			res.normalize();
 
-			/*
-			this.mNormals.put(a*3,this.mNormals.get(a*3)+res.get(0)/3.f);
-			this.mNormals.put(a*3+1,this.mNormals.get(a*3+1)+res.get(1)/3.f);
-			this.mNormals.put(a*3+2,this.mNormals.get(a*3+2)+res.get(2)/3.f);
-			
-			this.mNormals.put(b*3,this.mNormals.get(b*3)+res.get(0)/3.f);
-			this.mNormals.put(b*3+1,this.mNormals.get(b*3+1)+res.get(1)/3.f);
-			this.mNormals.put(b*3+2,this.mNormals.get(b*3+2)+res.get(2)/3.f);
-			
-			this.mNormals.put(c*3,this.mNormals.get(c*3)+res.get(0)/3.f);
-			this.mNormals.put(c*3+1,this.mNormals.get(c*3+1)+res.get(1)/3.f);
-			this.mNormals.put(c*3+2,this.mNormals.get(c*3+2)+res.get(2)/3.f);	
-			*/
-			/*
-			this.addNormal(a,res.get(0),res.get(1),res.get(2));
-			this.addNormal(b,res.get(0),res.get(1),res.get(2));
-			this.addNormal(c,res.get(0),res.get(1),res.get(2));		
-			*/	
-			
-			/*
-			this.addNormal(a,getNormal(a,0)+res.get(0)/3.f,getNormal(a,1)+res.get(1)/3.f,getNormal(a,2)+res.get(2)/3.f);
-			this.addNormal(b,getNormal(b,0)+res.get(0)/3.f,getNormal(b,1)+res.get(1)/3.f,getNormal(b,2)+res.get(2)/3.f);
-			this.addNormal(c,getNormal(c,0)+res.get(0)/3.f,getNormal(c,1)+res.get(1)/3.f,getNormal(c,2)+res.get(2)/3.f);			
-			*/
 			this.addNormal(a,getNormal(a,0)+res.get(0),getNormal(a,1)+res.get(1),getNormal(a,2)+res.get(2));
+			
+			Sd3dVector.sub(vm1, v2, v1);
+			Sd3dVector.sub(vm2, v0, v1);
+			Sd3dVector.cross(res, vm1, vm2);			
+			res.normalize();
+			
 			this.addNormal(b,getNormal(b,0)+res.get(0),getNormal(b,1)+res.get(1),getNormal(b,2)+res.get(2));
+			
+			Sd3dVector.sub(vm1, v0, v2);
+			Sd3dVector.sub(vm2, v1, v2);
+			Sd3dVector.cross(res, vm1, vm2);			
+			res.normalize();			
+			
 			this.addNormal(c,getNormal(c,0)+res.get(0),getNormal(c,1)+res.get(1),getNormal(c,2)+res.get(2));				
 		}
 		
@@ -1177,7 +1276,8 @@ public class Sd3dMesh
 	
 	public void generateNormalsTangentsBinormals()
 	{
-		generateNormals();
+		//generateNormals();
+		//mergeNormals();
 		
 		this.mTangentsBinormals = FloatBuffer.allocate(this.mVertices.capacity() / Sd3dMesh.nbFloatPerVertex * 6);
 		
@@ -1189,70 +1289,134 @@ public class Sd3dMesh
 		Sd3dVector binormal = new Sd3dVector();
 		Sd3dVector2d texCoords0 = new Sd3dVector2d();
 		Sd3dVector2d texCoords1 = new Sd3dVector2d();
+		Sd3dVector2d texCoords2 = new Sd3dVector2d();
+		Sd3dVector vm1 = new Sd3dVector();		
+		Sd3dVector vm2 = new Sd3dVector();
+		Sd3dVector2d t1 = new Sd3dVector2d();		
+		Sd3dVector2d t2 = new Sd3dVector2d();		
 		Sd3dVector v0 = new Sd3dVector();
-		Sd3dVector v1 = new Sd3dVector();		
-		
+		Sd3dVector v1 = new Sd3dVector();
+		Sd3dVector v2 = new Sd3dVector();		
+		float coef;
 		for (int i = 0;i < trianglecount;i++)
 		{
 			int a,b,c;			
 			a = this.mIndices.get();
 			b = this.mIndices.get();
 			c = this.mIndices.get();			
-			
-			// 1 side 
+
 			v0.setFromVertice(this.mVertices,a);
-			v1.setFromVertice(this.mVertices,b);			
+			v1.setFromVertice(this.mVertices,b);
+			v2.setFromVertice(this.mVertices,c);			
+
+			texCoords0.setFromTexCoords(this.mVertices, a);
+			texCoords1.setFromTexCoords(this.mVertices, b);
+			texCoords2.setFromTexCoords(this.mVertices, c);			
+			
+			// 1 side 				
+			Sd3dVector.sub(vm1, v1, v0);
+			Sd3dVector.sub(vm2, v2, v0);
+			
+			Sd3dVector2d.sub(t1, texCoords1, texCoords0);
+			Sd3dVector2d.sub(t2, texCoords2, texCoords0);
+		
+			vm1.normalize();
+			vm2.normalize();
+			t1.normalize();
+			t2.normalize();					
+			
+			coef = 1/ (t1.getX() * t2.getY() - t2.getX() * t1.getY());
+			
+			tangent.set(0, coef * (vm1.get(0) * t2.getY() + vm2.get(0) * -t1.getY()));
+			tangent.set(1, coef * (vm1.get(1) * t2.getY() + vm2.get(1) * -t1.getY()));
+			tangent.set(2, coef * (vm1.get(2) * t2.getY() + vm2.get(2) * -t1.getY()));
+			
+			tangent.normalize();		
 			
 			normal.setFromNormal(this.mVertices,a);
-			texCoords0.setFromTexCoords(this.mVertices, a);
-			texCoords0.setFromTexCoords(this.mVertices, b);
+			Sd3dVector.cross(binormal, normal, tangent);
+			binormal.normalize();
 			
-			tangent.set(0, v0.get(0) * texCoords1.getY() + v1.get(0) * -texCoords0.getY());
-			tangent.set(1, v0.get(1) * texCoords1.getY() + v1.get(1) * -texCoords0.getY());
-			tangent.set(2, v0.get(2) * texCoords1.getY() + v1.get(2) * -texCoords0.getY());
+			addTangent(a,getTangent(a,0)+tangent.get(0),getTangent(a,1)+tangent.get(1),getTangent(a,2)+tangent.get(2));
+			addBinormal(a,getBinormal(a,0)+binormal.get(0),getBinormal(a,1)+binormal.get(1),getBinormal(a,2)+binormal.get(2));
+			
+			// 2 side 			
+			Sd3dVector.sub(vm1, v2, v1);
+			Sd3dVector.sub(vm2, v0, v1);		
+
+			Sd3dVector2d.sub(t1, texCoords2, texCoords1);
+			Sd3dVector2d.sub(t2, texCoords0, texCoords1);
+			
+			vm1.normalize();
+			vm2.normalize();
+			t1.normalize();
+			t2.normalize();				
+			
+			coef = 1/ (t1.getX() * t2.getY() - t2.getX() * t1.getY());
+			
+			tangent.set(0, coef * (vm1.get(0) * t2.getY() + vm2.get(0) * -t1.getY()));
+			tangent.set(1, coef * (vm1.get(1) * t2.getY() + vm2.get(1) * -t1.getY()));
+			tangent.set(2, coef * (vm1.get(2) * t2.getY() + vm2.get(2) * -t1.getY()));
+			
+			tangent.normalize();		
+			
+			normal.setFromNormal(this.mVertices,b);			
+			Sd3dVector.cross(binormal, normal, tangent);
+			binormal.normalize();
+			
+			addTangent(b,getTangent(b,0)+tangent.get(0),getTangent(b,1)+tangent.get(1),getTangent(b,2)+tangent.get(2));
+			addBinormal(b,getBinormal(b,0)+binormal.get(0),getBinormal(b,1)+binormal.get(1),getBinormal(b,2)+binormal.get(2));			
+			
+			// 3 side 			
+			Sd3dVector.sub(vm1, v0, v2);
+			Sd3dVector.sub(vm2, v1, v2);				
+
+			Sd3dVector2d.sub(t1, texCoords0, texCoords2);
+			Sd3dVector2d.sub(t2, texCoords1, texCoords2);
+			
+			vm1.normalize();
+			vm2.normalize();
+			t1.normalize();
+			t2.normalize();				
+			
+			coef = 1/ (t1.getX() * t2.getY() - t2.getX() * t1.getY());
+
+			tangent.set(0, coef * (vm1.get(0) * t2.getY() + vm2.get(0) * -t1.getY()));
+			tangent.set(1, coef * (vm1.get(1) * t2.getY() + vm2.get(1) * -t1.getY()));
+			tangent.set(2, coef * (vm1.get(2) * t2.getY() + vm2.get(2) * -t1.getY()));
 			
 			tangent.normalize();
+					
+			normal.setFromNormal(this.mVertices,c);			
 			Sd3dVector.cross(binormal, normal, tangent);
+			binormal.normalize();
 			
-			addTangent(a,getTangent(a,0)+tangent.get(0)/3.f,getTangent(a,1)+tangent.get(1)/3.f,getTangent(a,2)+tangent.get(2)/3.f);
-			addBinormal(a,getBinormal(a,0)+binormal.get(0)/3.f,getBinormal(a,1)+tangent.get(1)/3.f,getTangent(a,2)+tangent.get(2)/3.f);
-			
-			// 2 side 
-			v0.setFromVertice(this.mVertices,b);
-			v1.setFromVertice(this.mVertices,c);			
-			
-			normal.setFromNormal(this.mVertices,b);
-			texCoords0.setFromTexCoords(this.mVertices, b);
-			texCoords0.setFromTexCoords(this.mVertices, c);
-			
-			tangent.set(0, v0.get(0) * texCoords1.getY() + v1.get(0) * -texCoords0.getY());
-			tangent.set(1, v0.get(1) * texCoords1.getY() + v1.get(1) * -texCoords0.getY());
-			tangent.set(2, v0.get(2) * texCoords1.getY() + v1.get(2) * -texCoords0.getY());
-			
-			tangent.normalize();
-			Sd3dVector.cross(binormal, normal, tangent);
-			
-			addTangent(b,getTangent(b,0)+tangent.get(0)/3.f,getTangent(b,1)+tangent.get(1)/3.f,getTangent(b,2)+tangent.get(2)/3.f);
-			addBinormal(b,getBinormal(b,0)+binormal.get(0)/3.f,getBinormal(b,1)+tangent.get(1)/3.f,getTangent(b,2)+tangent.get(2)/3.f);			
-			
-			// 3 side 
-			v0.setFromVertice(this.mVertices,c);
-			v1.setFromVertice(this.mVertices,a);			
-			
-			normal.setFromNormal(this.mVertices,c);
-			texCoords0.setFromTexCoords(this.mVertices, c);
-			texCoords0.setFromTexCoords(this.mVertices, a);
-			
-			tangent.set(0, v0.get(0) * texCoords1.getY() + v1.get(0) * -texCoords0.getY());
-			tangent.set(1, v0.get(1) * texCoords1.getY() + v1.get(1) * -texCoords0.getY());
-			tangent.set(2, v0.get(2) * texCoords1.getY() + v1.get(2) * -texCoords0.getY());
-			
-			tangent.normalize();
-			Sd3dVector.cross(binormal, normal, tangent);
-			
-			addTangent(c,getTangent(c,0)+tangent.get(0)/3.f,getTangent(c,1)+tangent.get(1)/3.f,getTangent(c,2)+tangent.get(2)/3.f);
-			addBinormal(c,getBinormal(c,0)+binormal.get(0)/3.f,getBinormal(c,1)+tangent.get(1)/3.f,getTangent(c,2)+tangent.get(2)/3.f);				
+			addTangent(c,getTangent(c,0)+tangent.get(0),getTangent(c,1)+tangent.get(1),getTangent(c,2)+tangent.get(2));
+			addBinormal(c,getBinormal(c,0)+binormal.get(0),getBinormal(c,1)+binormal.get(1),getBinormal(c,2)+binormal.get(2));				
 		}
+		
+		Sd3dVector tmp = new Sd3dVector();
+		for (int i = 0;i < this.mTangentsBinormals.capacity() / 6;i++)
+		{		
+			tmp.set(0, this.mTangentsBinormals.get(i * 6));
+			tmp.set(1, this.mTangentsBinormals.get(i * 6 + 1));
+			tmp.set(2, this.mTangentsBinormals.get(i * 6 + 2));		
+			tmp.normalize();
+			this.mTangentsBinormals.put(i * 6 + 0, tmp.get(0));
+			this.mTangentsBinormals.put(i * 6 + 1, tmp.get(1));
+			this.mTangentsBinormals.put(i * 6 + 2, tmp.get(2));
+			
+			tmp.set(0, this.mTangentsBinormals.get(i * 6 + 3));
+			tmp.set(1, this.mTangentsBinormals.get(i * 6 + 4));
+			tmp.set(2, this.mTangentsBinormals.get(i * 6 + 5));		
+			tmp.normalize();
+			this.mTangentsBinormals.put(i * 6 + 3, tmp.get(0));
+			this.mTangentsBinormals.put(i * 6 + 4, tmp.get(1));
+			this.mTangentsBinormals.put(i * 6 + 5, tmp.get(2));			
+		}		
+		
+
+		mergeTangents();		
 		
 		this.mIndices.position(0);
 		this.mTangentsBinormals.position(0);

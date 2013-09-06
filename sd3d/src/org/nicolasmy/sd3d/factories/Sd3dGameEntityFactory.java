@@ -36,12 +36,14 @@ public class Sd3dGameEntityFactory {
 			obj.mMesh[0] =  adapter.getMesh();
 		} else if (filename.toUpperCase(Locale.getDefault()).endsWith(".3DS")) {
 			obj.mMesh[0] = new Sd3dMesh();
-			obj.mMesh[0].loadFromFile(filename);
+			obj.mMesh[0].load3ds(filename, 1, 0f, 0f, 20f);
+			//loadFromFile(filename);
 		}
 		
 		
 		obj.mMaterial = new Sd3dMaterial[1];
-		obj.mMaterial[0] = Sd3dMaterialFactory.fromFile(texture);		
+		obj.mMaterial[0] = Sd3dMaterialFactory.fromFile(texture);
+		
 		entity.setObject(obj);
 		return entity;		
 	}

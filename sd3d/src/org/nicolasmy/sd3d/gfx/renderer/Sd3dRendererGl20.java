@@ -211,7 +211,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 						GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, material.mTextureData);
 				GLES20.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR); 
 				GLES20.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR); 
-				
+				GLES20.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S,GL11.GL_CLAMP_TO_EDGE);
 				
 				element.mTextureName[0] = buffer.get(0);
 				
@@ -230,11 +230,12 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 				GLES20.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA,
 						//material.mWidth, material.mHeight, 
 						//TODO remove that shit !
-						1024, 1024,
+						2048, 1024,
 						0, 
 						GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, material.mSecondaryTextureData);
 				GLES20.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR); 
 				GLES20.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR); 
+				GLES20.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S,GL11.GL_CLAMP_TO_EDGE);
 				
 				
 				element.mTextureName[1] = buffer.get(0);
@@ -895,10 +896,11 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		}				
 		*/
 		
+		
+		
 		Matrix.invertM(mTmpMatrix, 0, mLocalTransform, 0);
 		System.arraycopy(mTmpMatrix, 0, mLocalTransform, 0, 16);			
-		
-		//Matrix.multiplyMM(mTmpMatrix, 0, shader.modelMatrix, 0, mLocalTransform,0);
+
 		Matrix.multiplyMM(mTmpMatrix, 0, mLocalTransform,0, shader.modelMatrix, 0);
 		System.arraycopy(mTmpMatrix, 0, shader.modelMatrix, 0, 16);		
 		
@@ -1030,6 +1032,8 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		}
 		
 		
+		
+		
 	    // This multiplies the view matrix by the model matrix, and stores the result in the MVP matrix
 	    // (which currently contains model * view).    
 		Matrix.multiplyMM(shader.MVMatrix, 0, shader.viewMatrix, 0, shader.modelMatrix, 0);
@@ -1071,7 +1075,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	    else
 	    {
 
-		    
+	    	//Matrix.transposeM(mTmpMatrix, 0, shader.MVMatrix, 0);
 		    GLES20.glUniformMatrix4fv(shader.getMVMatrixHandle(), 1, false, shader.MVMatrix, 0);
 		    
 		    GLES20.glUniformMatrix4fv(shader.getMVPMatrixHandle(), 1, false, shader.MVPMatrix, 0);
@@ -1771,14 +1775,17 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
     	 // Set the OpenGL viewport to the same size as the surface.
         GLES20.glViewport(0, 0, width, height);
      
+        
+        float f = 1.0f;
+        
         // Create a new perspective projection matrix. The height will stay the same
         // while the width will vary as per aspect ratio.
         final float ratio = (float) width / height;
-        final float left = -ratio;
-        final float right = ratio;
-        final float bottom = -1.0f;
-        final float top = 1.0f;
-        final float near = 2.0f;
+        final float left = -ratio * f;
+        final float right = ratio * f;
+        final float bottom = -1.0f * f;
+        final float top = 1.0f * f;
+        final float near = 1.0f;
         final float far = 1000.0f;
      
         Matrix.frustumM(defaultShader.projectionMatrix, 0, left, right, bottom, top, near, far);    	

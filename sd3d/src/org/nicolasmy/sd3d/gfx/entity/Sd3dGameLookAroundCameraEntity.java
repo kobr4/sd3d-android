@@ -91,6 +91,12 @@ public class Sd3dGameLookAroundCameraEntity extends Sd3dGameCameraEntity {
 		this.mOrientation[1] =  this.mOrientation[1] + angle;		
 	}	
 	
+	public void rotateX(float angle)
+	{
+		this.mPosition[1] = mDistance * (float)Math.sin((float)angle);
+		this.mOrientation[0] -= angle;
+	}
+	
 	public void rotateLeft()
 	{
 		this.mOffsetOrientation[1] =  this.mOffsetOrientation[1] + 5.f;

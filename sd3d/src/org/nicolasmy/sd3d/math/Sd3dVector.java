@@ -4,6 +4,8 @@ import java.nio.FloatBuffer;
 
 import org.nicolasmy.sd3d.gfx.Sd3dMesh;
 
+import android.util.Log;
+
 public class Sd3dVector {
 	float mT[];
 	public Sd3dVector(){
