@@ -7,6 +7,14 @@ public class Sd3dGameLookAroundCameraEntity extends Sd3dGameCameraEntity {
 	float mDistance = -(float)20.0;
 	float mOffsetOrientation[];
 	
+	public float getDistance() {
+		return mDistance;
+	}
+	
+	public void setDistance(float distance) {
+		this.mDistance = distance;
+	}
+	
 	public Sd3dGameLookAroundCameraEntity(float distance, Sd3dGameEntity entity)
 	{
 		this.isActive = true;

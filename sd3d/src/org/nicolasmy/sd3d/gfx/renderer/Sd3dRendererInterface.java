@@ -22,6 +22,8 @@ public interface Sd3dRendererInterface {
     public abstract void setTop(int top);
     
     public abstract void displayText(String text,Sd3dRenderer.ALIGN halign, Sd3dRenderer.ALIGN valign, float size);
+
+    public abstract void displayText(String text,float x, float y,float z, float modelmatrix[]);    
     
     public abstract void invalidateRendererElements();
     

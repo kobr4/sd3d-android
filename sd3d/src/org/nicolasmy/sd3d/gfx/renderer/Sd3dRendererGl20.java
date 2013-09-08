@@ -37,6 +37,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		CENTER
 	}
 	
+	private Sd3dBitmapQuadFont mBitmapQuadFont = new Sd3dBitmapQuadFont();
 	private boolean useShadowVolume = false;
 	private boolean useShadowMapping = false;
 	private boolean useMultisampling = false;
@@ -539,6 +540,130 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		GLES20.glDisable(GL11.GL_BLEND);
 		
 	}
+	
+	
+	FloatBuffer quadVertexBuffer;
+	FloatBuffer quadTexcoordsBuffer;
+	private void drawShadowTexturedQuad(Sd3dShader shader, int[] texture)
+	{		
+		
+		float vertices[] = {
+				//0f, (float)this.screenHeight, 0f,        					  // V1 - first vertex (x,y,z)
+				//(float)this.screenWidth, (float)this.screenHeight, 0f,        // V2 - second vertex
+				0f,  0f,  0f,                                                 // V3 - third vertex	
+				(float)this.screenWidth, (float)this.screenHeight, 0f,        // V2 - second vertex	
+				0f, (float)this.screenHeight, 0f,        					  // V1 - first vertex (x,y,z)
+				//(float)this.screenWidth, (float)this.screenHeight, 0f,        // V1 - first vertex (x,y,z)
+				//(float)this.screenWidth, 0f,  0f,                             // V2 - second vertex
+				0f,  0f,  0f,                                                  // V3 - third vertex	
+				(float)this.screenWidth, 0f,  0f,                             // V2 - second vertex		
+				(float)this.screenWidth, (float)this.screenHeight, 0f,        // V1 - first vertex (x,y,z)	
+			
+		};		
+		
+		float texcoords[] = {
+				0f,  0f,
+				1f,  1f,
+				0f,  1f,
+				0f,  0f,		
+				1f,  0f,
+				1f,  1f,					
+		};
+		
+		
+		IntBuffer pixelBuffer = IntBuffer.wrap(texture);
+		IntBuffer buffer = IntBuffer.allocate(1);	
+		GLES20.glGenTextures(1, buffer); 
+		GLES20.glBindTexture(GL11.GL_TEXTURE_2D, buffer.get(0)); 
+		GLES20.glTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_GENERATE_MIPMAP, GL11.GL_FALSE);
+		GLES20.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA,this.screenWidth, this.screenHeight, 0, 
+			GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, pixelBuffer);
+		GLES20.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR); 
+		GLES20.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR); 
+		GLES20.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S,GL11.GL_CLAMP_TO_EDGE);		
+		
+		GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+		GLES20.glBindTexture(GL11.GL_TEXTURE_2D, buffer.get(0));
+		if (quadVertexBuffer == null)
+		{
+		  ByteBuffer quadVertexByteBuffer = ByteBuffer.allocateDirect(vertices.length * 4);
+		  quadVertexByteBuffer.order(ByteOrder.nativeOrder());
+		
+          // allocates the memory from the byte buffer
+		  quadVertexBuffer = quadVertexByteBuffer.asFloatBuffer();
+	    
+		  // fill the vertexBuffer with the vertices
+		  quadVertexBuffer.put(vertices);
+	    
+	      // set the cursor position to the beginning of the buffer	
+		  quadVertexBuffer.position(0);		
+	      
+		  ByteBuffer texcoordsByteBuffer = ByteBuffer.allocateDirect(texcoords.length * 4);
+		  texcoordsByteBuffer.order(ByteOrder.nativeOrder());
+		
+          // allocates the memory from the byte buffer
+		  quadTexcoordsBuffer = texcoordsByteBuffer.asFloatBuffer();
+	    
+		  // fill the vertexBuffer with the vertices
+		  quadTexcoordsBuffer.put(texcoords);
+	    
+	      // set the cursor position to the beginning of the buffer	
+		  quadTexcoordsBuffer.position(0);			      
+		}
+		
+		//OpenGL stuffs	
+		Matrix.setIdentityM(shader.modelMatrix, 0);
+		//Matrix.setIdentityM(mViewMatrix, 0);
+		
+		shader.renderStateVector.put(2, 0);//NO LIGHT	
+		shader.renderStateVector.put(1, 2);//HAS COLOR UNIFORM
+		shader.renderStateVector.put(0, 0);//NO TEXTURE
+		
+		//Colors 
+		shader.colorVector.put(0,0f);
+		shader.colorVector.put(1,0f);
+		shader.colorVector.put(2,0f);
+		shader.colorVector.put(3,0.3f);
+		
+	    // This multiplies the view matrix by the model matrix, and stores the result in the MVP matrix
+	    // (which currently contains model * view).
+	    //Matrix.multiplyMM(mMVMatrix, 0, mViewMatrix, 0, mModelMatrix, 0);
+	    //Matrix.multiplyMM(mMVMatrix, 0, mModelMatrix, 0,mViewMatrix, 0);
+	 
+	    // This multiplies the modelview matrix by the projection matrix, and stores the result in the MVP matrix
+	    // (which now contains model * view * projection).
+		Matrix.orthoM(shader.projectionOrthoMatrix, 0, 0, this.screenWidth, this.screenHeight, 0, -1, 1);
+	    Matrix.multiplyMM(shader.MVPMatrix, 0, shader.projectionOrthoMatrix , 0, shader.modelMatrix, 0);			
+	  
+
+	    shader.bind();
+	    
+
+	    GLES20.glUniformMatrix4fv(shader.getMVMatrixHandle(), 1, false, shader.MVMatrix, 0);
+	    GLES20.glUniformMatrix4fv(shader.getMVPMatrixHandle(), 1, false, shader.MVPMatrix, 0);
+	    GLES20.glUniform4iv(shader.getRenderStateVectorHandle(), 1, shader.renderStateVector);		
+	    GLES20.glUniform4fv(shader.getColorVectorHandle(), 1, shader.colorVector);	
+	    
+		
+		GLES20.glEnable(GL11.GL_BLEND);
+		GLES20.glBlendFunc(GL11.GL_SRC_COLOR, GL11.GL_ONE_MINUS_SRC_COLOR);
+		
+		GLES20.glVertexAttribPointer(Sd3dShader.vertexPositionHandle, 3, GLES20.GL_FLOAT, false, 0, quadVertexBuffer);
+		GLES20.glEnableVertexAttribArray(Sd3dShader.vertexPositionHandle);
+		
+		GLES20.glVertexAttribPointer(Sd3dShader.vertexTexCoordHandle, 2, GLES20.GL_FLOAT, false, 0, quadTexcoordsBuffer);
+	    GLES20.glEnableVertexAttribArray(Sd3dShader.vertexTexCoordHandle);				
+		
+		GLES20.glDrawArrays(GL11.GL_TRIANGLES, 0, 6);
+		
+		GLES20.glDisableVertexAttribArray(Sd3dShader.vertexPositionHandle);
+		GLES20.glDisableVertexAttribArray(Sd3dShader.vertexNormalHandle);
+		GLES20.glDisableVertexAttribArray(Sd3dShader.vertexTexCoordHandle);
+		GLES20.glDisable(GL11.GL_BLEND);
+		GLES20.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+		GLES20.glDeleteTextures(1, buffer);
+		//GLES20.glDeleteBuffers(1, buffer.array(), 0);
+	}	
 	
 	
 	private void drawHorizontalPlane(Sd3dScene scene,Sd3dShader shader)
@@ -1517,14 +1642,18 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	        GLES20.glCullFace(GL11.GL_BACK);
 	
 			Matrix.setIdentityM(defaultShader.viewMatrix, 0);
-	       
+	 
+		
+			
 			if (scene.getCamera().getRotationMatrix() == null)
 			{
 				
 				float rot[] = scene.getCamera().getOrientation();           
-				Matrix.rotateM(defaultShader.viewMatrix, 0, rot[0], 1.0f, 0.0f, 0.0f);
-				Matrix.rotateM(defaultShader.viewMatrix, 0, rot[1], 0.0f, 1.0f, 0.0f);
-				Matrix.rotateM(defaultShader.viewMatrix, 0, rot[2], 0.0f, 0.0f, 1.0f);
+//				Matrix.rotateM(defaultShader.viewMatrix, 0, rot[0], 1.0f, 0.0f, 0.0f);
+//				Matrix.rotateM(defaultShader.viewMatrix, 0, rot[1], 0.0f, 1.0f, 0.0f);
+//				Matrix.rotateM(defaultShader.viewMatrix, 0, rot[2], 0.0f, 0.0f, 1.0f);
+				
+				Sd3dRendererGl20.setRotateEulerM(defaultShader.viewMatrix, 0, rot[0], rot[1], rot[2]);
 				
 			}
 			else
@@ -1537,9 +1666,10 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 				Matrix.multiplyMM(defaultShader.viewMatrix, 0, scene.getCamera().getRotationMatrix(), 0, matrix, 0);
 			}
 				
+
 			float pos[] = scene.getCamera().getPosition();
-			Matrix.translateM(defaultShader.viewMatrix, 0, -pos[0], -pos[1], -pos[2]);
-	
+			Matrix.translateM(defaultShader.viewMatrix, 0, -pos[0], -pos[1], -pos[2]);		
+			
 	        updateFrustumFaster(defaultShader);        
 	
 	        
@@ -1568,19 +1698,23 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
         }
         
         
-        float[] tmp = defaultShader.projectionMatrix;
-        defaultShader.projectionMatrix = this.mProjectionOrthoMatrix;
-        Matrix.setIdentityM(defaultShader.viewMatrix, 0);
-        this.renderRenderInScreenSpaceList(defaultShader); 
-        
-        defaultShader.projectionMatrix = tmp;
+//        float[] tmp = defaultShader.projectionMatrix;
+//        defaultShader.projectionMatrix = this.mProjectionOrthoMatrix;
+//        Matrix.setIdentityM(defaultShader.viewMatrix, 0);
+//        this.renderRenderInScreenSpaceList(defaultShader); 
+//        
+//        defaultShader.projectionMatrix = tmp;
        	
         this.renderText(this.textureOnlyShader);
         
         this.mBmpFont.resetTextBuffer();    
         
+        drawShadowTexturedQuad(textureOnlyShader,mBitmapQuadFont.getPixels());
+        
         if (this.useShadowVolume)
         	renderShadowVolumeScene(scene,defaultShader);
+        
+        mBitmapQuadFont.frameEnd();
         
 	}
 	
@@ -1649,7 +1783,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		this.screenHeight = height;
 		this.screenWidth = width;		
 		mBmpFont.setScreenProperties(width, height);
-		
+		mBitmapQuadFont.init(width,height);
 		//this.pickingFrameBuffer.updateScreen(width, height);
 		
 		/*
@@ -2027,12 +2161,47 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	public void pointToScreen(float x,float y,float z,float res[])
 	{
 		GLU.gluProject(x, y, z, defaultShader.viewMatrix, 0, defaultShader.projectionMatrix, 0, this.mViewport, 0, res, 0);
+		// (0,0) is top left, not bottom left corner.
+		res[1] = this.screenHeight - res[1]; 
+	}	
+	
+	public void pointToScreen(float x,float y,float z,float res[], float modelmatrix[])
+	{
+		Matrix.multiplyMM(defaultShader.MVMatrix, 0, defaultShader.viewMatrix, 0, modelmatrix, 0);
+		GLU.gluProject(x, y, z, defaultShader.MVMatrix, 0, defaultShader.projectionMatrix, 0, this.mViewport, 0, res, 0);
+		// (0,0) is top left, not bottom left corner.
+		res[1] = this.screenHeight - res[1]; 
 	}
 	
 	public void displayText(String text,Sd3dRenderer.ALIGN halign, Sd3dRenderer.ALIGN valign, float size)
 	{
+		this.mBitmapQuadFont.drawText(text, 0, 0);
 		this.mBmpFont.addTextToBuffer(text, halign, valign, size);
 	}	
+	
+	float tmpP[] = new float[3]; 
+	public void displayText(String text,float x, float y, float z, float modelmatrix[])
+	{
+		
+		pointToScreen((float)x,(float)y,(float)z,tmpP,modelmatrix);
+		this.mBitmapQuadFont.drawText(text, (int)tmpP[0], (int)tmpP[1]);
+		this.mBitmapQuadFont.drawText("Drawing text at : "+(int)tmpP[0]+" - "+(int)tmpP[1],0, 100);
+		
+		displayMatrix(defaultShader.viewMatrix);
+	}		
+	
+	private void displayMatrix(float[] matrix) {
+		String m = "";
+		for (int i = 0;i < 16;i++) {
+			m = m + " " + matrix[i];
+			if ((i+1)%4 == 0) {
+				this.mBitmapQuadFont.drawText(m, 100, 120 + i * 8);
+				m = "";
+			}
+		}
+		
+		
+	}
 	
 	public void RendererElements()
 	{
