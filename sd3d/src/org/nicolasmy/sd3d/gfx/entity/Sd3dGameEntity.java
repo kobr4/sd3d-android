@@ -115,7 +115,7 @@ public abstract class Sd3dGameEntity
 	{
 		mOrientation[0] = Rx;
 		mOrientation[1] = Ry;
-		mOrientation[2] = Rz;			
+		mOrientation[2] = Rz;		
 	}		
 	
 	public void onProcessTimer()

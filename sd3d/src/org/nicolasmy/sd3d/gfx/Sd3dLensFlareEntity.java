@@ -8,11 +8,13 @@ import org.nicolasmy.sd3d.gfx.Sd3dScene.Sd3dCamera;
 import org.nicolasmy.sd3d.gfx.entity.Sd3dGameCameraEntity;
 import org.nicolasmy.sd3d.gfx.entity.Sd3dGameEntity;
 import org.nicolasmy.sd3d.gfx.renderer.Sd3dRendererInterface;
+import org.nicolasmy.sd3d.math.Sd3dVector;
 import org.nicolasmy.sd3d.math.Sd3dVector2d;
 
 import android.util.Log;
 
 public class Sd3dLensFlareEntity extends Sd3dGameEntity {
+	Sd3dVector mLightSourcePosition = new Sd3dVector();
 	Sd3dVector2d mScreenCenter = new Sd3dVector2d();
 	Sd3dVector2d mLightPosition = new Sd3dVector2d();
 	Sd3dVector2d mToFlare = new Sd3dVector2d();
@@ -69,6 +71,16 @@ public class Sd3dLensFlareEntity extends Sd3dGameEntity {
 		this.mRenderer = renderer;
 	}
 
+	public void setLightSourcePosition(float x, float y, float z) {
+		this.mLightSourcePosition.set(0, x);
+		this.mLightSourcePosition.set(1, y);
+		this.mLightSourcePosition.set(2, z);		
+	}
+	
+	public Sd3dVector getLightSourcePosition() {
+		return mLightSourcePosition;
+	}
+	
 	private static void setupFlareElement(Sd3dMesh mesh,Sd3dMaterial material, String texture, float size)
     {
     	int nbTriangle = 2;
@@ -100,15 +112,19 @@ public class Sd3dLensFlareEntity extends Sd3dGameEntity {
   
 	public void onProcessFrame(int elapsedtime)
 	{	
-		if (mRenderer.pointInFrustum(100.f+mCamera.getPosition()[0], -20.f, 100.f+mCamera.getPosition()[2]))
+		//if (mRenderer.pointInFrustum(100.f+mCamera.getPosition()[0], 0.f, 100.f+mCamera.getPosition()[2]))
+		this.mRenderer.pointToScreen(mLightSourcePosition.get(0), mLightSourcePosition.get(1), mLightSourcePosition.get(2),lightpos);
+		if ((lightpos[0] >= 0f)&&(lightpos[1] >= 0f)&&(lightpos[0] <= this.mRenderer.getScreenWidth())&&(lightpos[1] <= this.mRenderer.getScreenHeight()))
+		//if (mRenderer.pointInFrustum(100.f, 0.f, 100.f))
 		{
 			
 			this.hasObject = true;
 			this.mScreenCenter.set(this.mRenderer.getScreenWidth()*0.5f, this.mRenderer.getScreenHeight()*0.5f);
 			
-			this.mRenderer.pointToScreen(100.f+mCamera.getPosition()[0], -30.f, 100.f+mCamera.getPosition()[2],lightpos);
+//			this.mRenderer.pointToScreen(100.f+mCamera.getPosition()[0], 0.f, 100.f+mCamera.getPosition()[2],lightpos);
+			this.mRenderer.pointToScreen(mLightSourcePosition.get(0), mLightSourcePosition.get(1), mLightSourcePosition.get(2),lightpos);
 			
-			//Log.d("LENS FLARE","LIGHT POSITION="+lightpos[0]+" "+lightpos[1]);
+			Log.d("LENS FLARE","LIGHT POSITION="+lightpos[0]+" "+lightpos[1]);
 			//this.mLightPosition.set(600, 150);
 			
 			
@@ -123,6 +139,7 @@ public class Sd3dLensFlareEntity extends Sd3dGameEntity {
 
 				mVector.mul(length * flareCoefList[i]);
 				mVector.add(this.mScreenCenter);
+				
 				this.mObject.mMesh[i].mMeshPosition[0] = mVector.getX();
 				this.mObject.mMesh[i].mMeshPosition[1] = mVector.getY();
 			}

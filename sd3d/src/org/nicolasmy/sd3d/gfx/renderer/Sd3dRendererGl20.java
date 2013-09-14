@@ -20,6 +20,8 @@ import org.nicolasmy.sd3d.gfx.Sd3dRessourceManager;
 import org.nicolasmy.sd3d.gfx.Sd3dScene;
 
 
+import org.nicolasmy.sd3d.math.Sd3dMatrix;
+
 import android.opengl.GLES20;
 import android.opengl.GLU;
 import android.opengl.Matrix;
@@ -750,40 +752,6 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	
 	private float matrix[] = new float[16];
 
-	public static void setRotateEulerM(float[] rm, int rmOffset, float x,
-			float y, float z) {
-		x = x * 0.01745329f;
-		y = y * 0.01745329f;
-		z = z * 0.01745329f;
-		float sx = (float) Math.sin(x);
-		float sy = (float) Math.sin(y);
-		float sz = (float) Math.sin(z);
-		float cx = (float) Math.cos(x);
-		float cy = (float) Math.cos(y);
-		float cz = (float) Math.cos(z);
-		float cxsy = cx * sy;
-		float sxsy = sx * sy;
-
-		rm[rmOffset + 0] = cy * cz;
-		rm[rmOffset + 1] = -cy * sz;
-		rm[rmOffset + 2] = sy;
-		rm[rmOffset + 3] = 0.0f;
-
-		rm[rmOffset + 4] = sxsy * cz + cx * sz;
-		rm[rmOffset + 5] = -sxsy * sz + cx * cz;
-		rm[rmOffset + 6] = -sx * cy;
-		rm[rmOffset + 7] = 0.0f;
-
-		rm[rmOffset + 8] = -cxsy * cz + sx * sz;
-		rm[rmOffset + 9] = cxsy * sz + sx * cz;
-		rm[rmOffset + 10] = cx * cy;
-		rm[rmOffset + 11] = 0.0f;
-
-		rm[rmOffset + 12] = 0.0f;
-		rm[rmOffset + 13] = 0.0f;
-		rm[rmOffset + 14] = 0.0f;
-		rm[rmOffset + 15] = 1.0f;
-	}	
 	
 	public void renderRenderElementToDepth(Sd3dRendererElement element,Sd3dShader shader)
 	{	
@@ -804,7 +772,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		if (!element.mIsShadowVolume)
 			if (element.mOrientation != null)
 			{
-				Sd3dRendererGl20.setRotateEulerM(shader.normalMatrix, 0, element.mOrientation[0], element.mOrientation[1], element.mOrientation[2]);
+				Sd3dMatrix.setRotateEulerM(shader.normalMatrix, 0, element.mOrientation[0], element.mOrientation[1], element.mOrientation[2]);
 				Matrix.multiplyMM(mTmpMatrix, 0, shader.normalMatrix, 0, mLocalTransform,0);
 				System.arraycopy(mTmpMatrix, 0, mLocalTransform, 0, 16);
 			}	
@@ -969,9 +937,12 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		*/
 			if (element.mOrientation != null)
 			{
-				Sd3dRendererGl20.setRotateEulerM(shader.normalMatrix, 0, element.mOrientation[0], element.mOrientation[1], element.mOrientation[2]);
+				Sd3dMatrix.setRotateEulerM(shader.normalMatrix, 0, element.mOrientation[0], element.mOrientation[1], element.mOrientation[2]);
+				//Log.d("EULERM",element.mOrientation[0] + " " + element.mOrientation[1] + " " + element.mOrientation[2]);
 				Matrix.multiplyMM(mTmpMatrix, 0, shader.normalMatrix, 0, mLocalTransform,0);
 				System.arraycopy(mTmpMatrix, 0, mLocalTransform, 0, 16);
+				
+				
 			}	
 			
 		if (element.mTransformMatrix != null)
@@ -1364,13 +1335,20 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	
 	private void renderRenderInScreenSpaceList(Sd3dShader shader)
 	{
+		
+		shader.bind();		
 		for (int i = 0; i < mCountRenderElement;i++)
 		{
 			if ((!mRenderList[i].mIsShadowVolume)&&(mRenderList[i].mIsInScreenSpace))
 			{
-			  renderRenderElement(mRenderList[i],shader);
+				Log.d("","RENDERING "+i+" ELEMENT IN SCREEN SPACE" + mRenderList[i].mPosition[0] +" "+ mRenderList[i].mPosition[1] + " "+ mRenderList[i].mPosition[2]);
+			    Matrix.setIdentityM(shader.modelMatrix, 0);
+				Matrix.setIdentityM(shader.normalMatrix, 0);				
+				
+				renderRenderElement(mRenderList[i],shader);
 			}
-		}		
+		}	
+		shader.unbind();		
 	}
 	
 	public void renderRenderListToDepth(Sd3dShader shader)
@@ -1649,11 +1627,11 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			{
 				
 				float rot[] = scene.getCamera().getOrientation();           
-//				Matrix.rotateM(defaultShader.viewMatrix, 0, rot[0], 1.0f, 0.0f, 0.0f);
-//				Matrix.rotateM(defaultShader.viewMatrix, 0, rot[1], 0.0f, 1.0f, 0.0f);
-//				Matrix.rotateM(defaultShader.viewMatrix, 0, rot[2], 0.0f, 0.0f, 1.0f);
+				Matrix.rotateM(defaultShader.viewMatrix, 0, rot[0], 1.0f, 0.0f, 0.0f);
+				Matrix.rotateM(defaultShader.viewMatrix, 0, rot[1], 0.0f, 1.0f, 0.0f);
+				Matrix.rotateM(defaultShader.viewMatrix, 0, rot[2], 0.0f, 0.0f, 1.0f);
 				
-				Sd3dRendererGl20.setRotateEulerM(defaultShader.viewMatrix, 0, rot[0], rot[1], rot[2]);
+//				Sd3dRendererGl20.setRotateEulerM(defaultShader.viewMatrix, 0, rot[0], rot[1], rot[2]);
 				
 			}
 			else
@@ -1698,12 +1676,12 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
         }
         
         
-//        float[] tmp = defaultShader.projectionMatrix;
-//        defaultShader.projectionMatrix = this.mProjectionOrthoMatrix;
-//        Matrix.setIdentityM(defaultShader.viewMatrix, 0);
-//        this.renderRenderInScreenSpaceList(defaultShader); 
-//        
-//        defaultShader.projectionMatrix = tmp;
+        float[] tmp = textureOnlyShader.projectionMatrix;
+        textureOnlyShader.projectionMatrix = this.mProjectionOrthoMatrix;
+        Matrix.setIdentityM(textureOnlyShader.viewMatrix, 0);
+        this.renderRenderInScreenSpaceList(textureOnlyShader); 
+        
+        textureOnlyShader.projectionMatrix = tmp;
        	
         this.renderText(this.textureOnlyShader);
         
@@ -2167,7 +2145,8 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	
 	public void pointToScreen(float x,float y,float z,float res[], float modelmatrix[])
 	{
-		Matrix.multiplyMM(defaultShader.MVMatrix, 0, defaultShader.viewMatrix, 0, modelmatrix, 0);
+		//Matrix.setIdentityM(defaultShader.viewMatrix, 0);
+		Matrix.multiplyMM(defaultShader.MVMatrix, 0, defaultShader.viewMatrix, 0,modelmatrix, 0);
 		GLU.gluProject(x, y, z, defaultShader.MVMatrix, 0, defaultShader.projectionMatrix, 0, this.mViewport, 0, res, 0);
 		// (0,0) is top left, not bottom left corner.
 		res[1] = this.screenHeight - res[1]; 
@@ -2185,17 +2164,18 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		
 		pointToScreen((float)x,(float)y,(float)z,tmpP,modelmatrix);
 		this.mBitmapQuadFont.drawText(text, (int)tmpP[0], (int)tmpP[1]);
-		this.mBitmapQuadFont.drawText("Drawing text at : "+(int)tmpP[0]+" - "+(int)tmpP[1],0, 100);
+		//this.mBitmapQuadFont.drawText("Drawing text at : "+(int)tmpP[0]+" - "+(int)tmpP[1],0, 100);
 		
-		displayMatrix(defaultShader.viewMatrix);
+		//displayMatrix(defaultShader.normalMatrix,10);
+		//displayMatrix(modelmatrix,130);		
 	}		
 	
-	private void displayMatrix(float[] matrix) {
+	private void displayMatrix(float[] matrix, int offsetEcran) {
 		String m = "";
 		for (int i = 0;i < 16;i++) {
 			m = m + " " + matrix[i];
 			if ((i+1)%4 == 0) {
-				this.mBitmapQuadFont.drawText(m, 100, 120 + i * 8);
+				this.mBitmapQuadFont.drawText(m, 0, offsetEcran + i * 8);
 				m = "";
 			}
 		}

@@ -477,7 +477,7 @@ public class Sd3dMesh
 		addPoint(x3,y3,z3,0f,0f,0f,x3t,y3t);
 		addPoint(x4,y4,z4,0f,0f,0f,x4t,y4t);
 		
-		mIndices.put((char)indice);
+		mIndices.put((char)(indice+0));
 		mIndices.put((char)(indice+1));
 		mIndices.put((char)(indice+2));		
 		

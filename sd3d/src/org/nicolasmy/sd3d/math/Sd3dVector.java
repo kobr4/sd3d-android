@@ -20,6 +20,11 @@ public class Sd3dVector {
 		this.set(2, z);
 	}
 	
+	public Sd3dVector(float[] v) {
+		this();
+		this.set(v);
+	}
+	
 	public Sd3dVector clone()
 	{
 		return new Sd3dVector(this.get(0),this.get(1),this.get(2));
