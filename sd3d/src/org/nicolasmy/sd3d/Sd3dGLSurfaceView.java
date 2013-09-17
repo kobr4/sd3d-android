@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
 
 
+
+
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGL11;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -17,6 +19,8 @@ import org.nicolasmy.sd3d.gfx.Sd3dRessourceManager;
 import org.nicolasmy.sd3d.gfx.renderer.Sd3dRenderer;
 import org.nicolasmy.sd3d.gfx.renderer.Sd3dRendererInterface;
 //import javax.microedition.khronos.opengles.GL10;
+
+import org.nicolasmy.sd3d.utils.Sd3dLogger;
 
 import android.app.ActivityManager;
 import android.content.Context;
@@ -32,13 +36,17 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Display;
 import android.view.SurfaceHolder;
+import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
 
 
-public class Sd3dGLSurfaceView extends SurfaceView implements SurfaceHolder.Callback,android.hardware.SensorEventListener, 
-android.view.View.OnTouchListener
+public class Sd3dGLSurfaceView extends SurfaceView 
+implements 
+SurfaceHolder.Callback
+//,android.hardware.SensorEventListener, 
+//android.view.View.OnTouchListener
 {
 	
 	private SensorManager mSensorManager; 
@@ -80,25 +88,26 @@ android.view.View.OnTouchListener
         // Install a SurfaceHolder.Callback so we get notified when the
         // underlying surface is created and destroyed
         mHolder = getHolder();
-        mHolder.addCallback(this);
+        mHolder.addCallback((Callback) this);
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_GPU);
         
         //FOR Cam
         mHolder.setFormat(PixelFormat.TRANSLUCENT);
         
+
         
-        this.setOnTouchListener(this);   
-         	
+        //this.setOnTouchListener(this);   
+        Sd3dLogger.log("Surface INIT");
         
         // setup accelerometer sensor manager.
-        mSensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+//        mSensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         // register our accelerometer so we can receive values.
         // SENSOR_DELAY_GAME is the recommended rate for games
-        mSensorManager.registerListener(
-        		(android.hardware.SensorEventListener)this,
-        		mSensorManager.getSensorList(android.hardware.Sensor.TYPE_ACCELEROMETER).get(0),
-                SensorManager.SENSOR_DELAY_GAME
-                );       
+//        mSensorManager.registerListener(
+//        		(android.hardware.SensorEventListener)this,
+//        		mSensorManager.getSensorList(android.hardware.Sensor.TYPE_ACCELEROMETER).get(0),
+//                SensorManager.SENSOR_DELAY_GAME
+//                );       
      
     }
 
@@ -106,9 +115,9 @@ android.view.View.OnTouchListener
         return mHolder;
     }
 
-    public void setGLWrapper(GLWrapper glWrapper) {
-        mGLWrapper = glWrapper;
-    }
+    //public void setGLWrapper(GLWrapper glWrapper) {
+      //  mGLWrapper = glWrapper;
+    //}
 
     public void setRendererGame(Sd3dRendererInterface renderer,Sd3dGame game) {
         mGLThread = new GLThread(renderer,game);
@@ -123,7 +132,7 @@ android.view.View.OnTouchListener
     	mGLThread.setHolder(holder);
         mGLThread.surfaceCreated();
 
-
+        setOnTouchListener((OnTouchListener)GameHolder.mGame.getFrameProcessor(0));
     }
 
     public void surfaceDestroyed(SurfaceHolder holder) {
@@ -143,7 +152,7 @@ android.view.View.OnTouchListener
      */
     public void onPause() {
         mGLThread.onPause();
-        mSensorManager.unregisterListener(this);
+       // mSensorManager.unregisterListener(this);
     }
 
     /**
@@ -191,7 +200,6 @@ android.view.View.OnTouchListener
     // ----------------------------------------------------------------------
 
     private GLThread mGLThread;
-    private GLWrapper mGLWrapper;
     public SurfaceHolder mHolder;
 
 }

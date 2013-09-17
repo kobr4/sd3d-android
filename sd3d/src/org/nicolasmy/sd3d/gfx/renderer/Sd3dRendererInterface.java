@@ -25,6 +25,8 @@ public interface Sd3dRendererInterface {
 
     public abstract void displayText(String text,float x, float y,float z, float modelmatrix[]);    
     
+    public abstract void displayText(String text,float x, float y);    
+    
     public abstract void invalidateRendererElements();
     
     public abstract void destroyRenderElement(Sd3dObject object);

@@ -33,9 +33,16 @@ public class Sd3dMaterial
 	public boolean alphaTest;
 	public boolean renderLight;
 	public int mColorName;
+	private String mShaderName;
 	
 	
+	public void setshaderName(String shaderName) {
+		this.mShaderName = shaderName;
+	}
 	
+	public String getShaderName() {
+		return this.mShaderName;
+	}
 	
 	public boolean isRenderLight() {
 		return renderLight;

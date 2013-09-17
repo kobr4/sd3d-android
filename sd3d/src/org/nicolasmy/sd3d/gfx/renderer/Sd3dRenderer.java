@@ -16,6 +16,7 @@ import org.nicolasmy.sd3d.gfx.Sd3dScene;
 
 
 
+
 import android.opengl.GLES20;
 import android.opengl.GLU;
 import android.opengl.Matrix;
@@ -1364,6 +1365,13 @@ public class Sd3dRenderer implements Sd3dRendererInterface
 
 	@Override
 	public void displayText(String text, float x, float y,float z, float modelmatrix[]) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public void displayText(String text, float x, float y) {
 		// TODO Auto-generated method stub
 		
 	}

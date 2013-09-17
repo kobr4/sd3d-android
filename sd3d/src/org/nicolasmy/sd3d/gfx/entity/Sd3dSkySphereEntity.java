@@ -29,6 +29,7 @@ public class Sd3dSkySphereEntity extends Sd3dGameEntity {
 		this.mObject.mPosition = this.mPosition;
 		try {
 			this.mObject.mMaterial[0] = Sd3dMaterialFactory.fromFile(filename);
+			this.mObject.mMaterial[0].setshaderName("textureonly");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

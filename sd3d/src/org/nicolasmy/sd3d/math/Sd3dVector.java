@@ -146,4 +146,19 @@ public class Sd3dVector {
 			mT[2] = mT[2]/d;			
 		}
 	}
+	
+	public static double collideSphere(Sd3dVector origin, Sd3dVector direction, float sphereRadius, Sd3dVector spherePosition) {
+		double r2 = sphereRadius * sphereRadius;
+	
+		double a = Sd3dVector.dot(direction, direction);
+		Sd3dVector oc = new Sd3dVector();
+		Sd3dVector.sub(oc, origin,spherePosition);
+		double b = Sd3dVector.dot(oc, direction);
+		b = b *2;
+		oc = origin.clone();
+		Sd3dVector.sub(oc, origin,spherePosition);
+		double c = Sd3dVector.dot(oc, oc) - r2;
+
+		return b*b - 4 * a * c;
+	}		
 }

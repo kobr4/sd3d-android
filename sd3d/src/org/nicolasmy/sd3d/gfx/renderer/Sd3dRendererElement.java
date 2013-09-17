@@ -32,5 +32,6 @@ public class Sd3dRendererElement {
 	public float mTransformMatrix[];
 	public boolean mIsShadowVolume;
 	public Sd3dObject mObject;		
+	public String mShaderName;
 	public Sd3dRendererElementInterface mRendererInterface;
 }

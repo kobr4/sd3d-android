@@ -2,7 +2,9 @@ package org.nicolasmy.sd3d;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.microedition.khronos.opengles.GL11;
+
 import org.nicolasmy.sd3d.Sd3dGLSurfaceView;
 import org.nicolasmy.sd3d.gfx.Sd3dLight;
 import org.nicolasmy.sd3d.gfx.Sd3dObject;
@@ -17,6 +19,7 @@ import org.nicolasmy.sd3d.gfx.renderer.Sd3dRendererInterface;
 import org.nicolasmy.sd3d.interfaces.Sd3dCollisionAgainstInterface;
 import org.nicolasmy.sd3d.interfaces.Sd3dFrameProcessorInterface;
 import org.nicolasmy.sd3d.interfaces.Sd3dTouchListenerInterface;
+import org.nicolasmy.sd3d.utils.Sd3dLogger;
 
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -121,8 +124,10 @@ public class Sd3dGame
 					{
 						if (invalidateRenderElements)
 						{
-							for (int j = 0; j< mEntityList.get(i).mObject.mMesh.length;j++)
-							  mEntityList.get(i).mObject.mRenderElement = null;
+							for (int j = 0; j< mEntityList.get(i).mObject.mMesh.length;j++) {
+								mEntityList.get(i).mObject.mMesh[j].mRendererElementInterface = null;
+							}
+							mEntityList.get(i).mObject.mRenderElement = null;
 							for (int l = 0;l < mEntityList.get(i).mObject.mMaterial.length;l++) {
 							  mEntityList.get(i).mObject.mMaterial[l].mColorName = 0;
 							  mEntityList.get(i).mObject.mMaterial[l].mTextureName[0] = 0;
@@ -207,8 +212,10 @@ public class Sd3dGame
 				invalidateRenderElements = false;
 			}
 		}
+			
+			Sd3dLogger.render();
 		}
-		
+
 	}	
 	
 	

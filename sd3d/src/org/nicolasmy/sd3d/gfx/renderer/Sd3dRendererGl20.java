@@ -5,6 +5,7 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import javax.microedition.khronos.egl.EGL11;
 import javax.microedition.khronos.opengles.GL11;
@@ -38,7 +39,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		RIGHT,
 		CENTER
 	}
-	
+	private HashMap<String, Sd3dShader> shaderMap = new HashMap<String, Sd3dShader>();
 	private Sd3dBitmapQuadFont mBitmapQuadFont = new Sd3dBitmapQuadFont();
 	private boolean useShadowVolume = false;
 	private boolean useShadowMapping = false;
@@ -248,6 +249,9 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			element.mTextureName[1] = material.mTextureName[1];
 		}		
 		
+		if (material.getShaderName() != null) {
+			element.mShaderName = material.getShaderName();
+		}
 		
 		if (GLES20.glGetError() != GLES20.GL_NO_ERROR)
 		{
@@ -594,11 +598,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
           // allocates the memory from the byte buffer
 		  quadVertexBuffer = quadVertexByteBuffer.asFloatBuffer();
 	    
-		  // fill the vertexBuffer with the vertices
-		  quadVertexBuffer.put(vertices);
-	    
-	      // set the cursor position to the beginning of the buffer	
-		  quadVertexBuffer.position(0);		
+
 	      
 		  ByteBuffer texcoordsByteBuffer = ByteBuffer.allocateDirect(texcoords.length * 4);
 		  texcoordsByteBuffer.order(ByteOrder.nativeOrder());
@@ -612,6 +612,13 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	      // set the cursor position to the beginning of the buffer	
 		  quadTexcoordsBuffer.position(0);			      
 		}
+		
+		  // fill the vertexBuffer with the vertices
+		  quadVertexBuffer.put(vertices);
+	    
+	      // set the cursor position to the beginning of the buffer	
+		  quadVertexBuffer.position(0);		
+		  
 		
 		//OpenGL stuffs	
 		Matrix.setIdentityM(shader.modelMatrix, 0);
@@ -925,6 +932,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		Matrix.invertM(mTmpMatrix, 0, shader.modelMatrix, 0);
 		System.arraycopy(mTmpMatrix, 0, shader.modelMatrix, 0, 16);
 		
+
 		
 		if (!element.mIsShadowVolume)
 		/*
@@ -1341,7 +1349,6 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		{
 			if ((!mRenderList[i].mIsShadowVolume)&&(mRenderList[i].mIsInScreenSpace))
 			{
-				Log.d("","RENDERING "+i+" ELEMENT IN SCREEN SPACE" + mRenderList[i].mPosition[0] +" "+ mRenderList[i].mPosition[1] + " "+ mRenderList[i].mPosition[2]);
 			    Matrix.setIdentityM(shader.modelMatrix, 0);
 				Matrix.setIdentityM(shader.normalMatrix, 0);				
 				
@@ -1368,6 +1375,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 	
 	public void renderRenderList(Sd3dShader shader,int lightPass)
 	{
+		Sd3dShader currentShader = shader;
 		for (int i = 0; i < mCountRenderElement;i++)
 		{
 			//if ((lightPass > 0)&&(!mRenderList[i].mRenderLight)) 
@@ -1375,18 +1383,32 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			
 			if ((!mRenderList[i].mIsShadowVolume)&&(!mRenderList[i].mIsInScreenSpace))
 			{
-				Matrix.setIdentityM(shader.modelMatrix, 0);
-				Matrix.setIdentityM(shader.normalMatrix, 0);
+				if (mRenderList[i].mShaderName != null) {
+					currentShader = this.shaderMap.get(mRenderList[i].mShaderName);
+					if (currentShader != null) {
+						System.arraycopy(shader.viewMatrix, 0, currentShader.viewMatrix, 0, 16);
+						shader.unbind();
+						currentShader.bind();
+					}
+				}
+				
+				Matrix.setIdentityM(currentShader.modelMatrix, 0);
+				Matrix.setIdentityM(currentShader.normalMatrix, 0);
 				
 				if (mRenderList[i].mRenderLight)
 				{				
-					shader.renderStateVector.put(2, 1);//LIGHT	
+					currentShader.renderStateVector.put(2, 1);//LIGHT	
 				}		
 				{
-					shader.renderStateVector.put(2, 0);//NO LIGHT	
+					currentShader.renderStateVector.put(2, 0);//NO LIGHT	
 				}				
 				
-				renderRenderElement(mRenderList[i],shader);
+				renderRenderElement(mRenderList[i],currentShader);
+				
+				if (mRenderList[i].mShaderName != null) {
+					currentShader.unbind();
+					shader.bind();
+				}
 			}
 		}
 	}
@@ -1952,7 +1974,9 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 				Sd3dRessourceManager.getManager().getText("shaders/coloronly_fs.gl"));
 		pickingShader.register();  
 	
-    	
+		shaderMap.put("textureonly", textureOnlyShader);
+		shaderMap.put("coloronly", textureOnlyShader);   
+		
     	if (pickingFrameBuffer != null) {
     		Log.d("Sd3dRendererGL20","Deleting picking framebuffer");
     		pickingFrameBuffer.release();
@@ -2222,6 +2246,12 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 		int b = (buffer.get(0) & 0xff0000) >> 16;
 		//Log.d("Sd3dRendererGl20","R="+r+" G="+g+" B="+b);
 		return getObjectFromPickingColor(r,g,b);
+	}
+
+
+	@Override
+	public void displayText(String text, float x, float y) {
+		this.mBitmapQuadFont.drawText(text, (int)x, (int)y);	
 	}
 	
 	

@@ -10,6 +10,7 @@ import org.nicolasmy.sd3d.gfx.entity.Sd3dGameEntity;
 import org.nicolasmy.sd3d.gfx.renderer.Sd3dRendererInterface;
 import org.nicolasmy.sd3d.math.Sd3dVector;
 import org.nicolasmy.sd3d.math.Sd3dVector2d;
+import org.nicolasmy.sd3d.utils.Sd3dLogger;
 
 import android.util.Log;
 
@@ -105,7 +106,7 @@ public class Sd3dLensFlareEntity extends Sd3dGameEntity {
 			material.loadTexture(texture);
 			material.alphaBlending = true;
 		} catch (IOException e) {
-			Log.d("setupFlareElement()","CANNOT LOAD TEXTURE: "+texture);
+			Sd3dLogger.log("setupFlareElement() CANNOT LOAD TEXTURE: "+texture);
 		}
     	
     }
@@ -123,8 +124,6 @@ public class Sd3dLensFlareEntity extends Sd3dGameEntity {
 			
 //			this.mRenderer.pointToScreen(100.f+mCamera.getPosition()[0], 0.f, 100.f+mCamera.getPosition()[2],lightpos);
 			this.mRenderer.pointToScreen(mLightSourcePosition.get(0), mLightSourcePosition.get(1), mLightSourcePosition.get(2),lightpos);
-			
-			Log.d("LENS FLARE","LIGHT POSITION="+lightpos[0]+" "+lightpos[1]);
 			//this.mLightPosition.set(600, 150);
 			
 			
