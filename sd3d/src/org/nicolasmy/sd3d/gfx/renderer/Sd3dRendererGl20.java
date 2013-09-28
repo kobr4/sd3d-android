@@ -1408,6 +1408,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 				if (mRenderList[i].mShaderName != null) {
 					currentShader.unbind();
 					shader.bind();
+					currentShader = shader;
 				}
 			}
 		}
@@ -1671,8 +1672,7 @@ public class Sd3dRendererGl20 implements Sd3dRendererInterface
 			Matrix.translateM(defaultShader.viewMatrix, 0, -pos[0], -pos[1], -pos[2]);		
 			
 	        updateFrustumFaster(defaultShader);        
-	
-	        
+	     
 	        if (lightPass > 0)
 	        {
 	        	//GLES20.glClear(GL11.GL_DEPTH_BUFFER_BIT);

@@ -86,7 +86,9 @@ public class Sd3dGame
 		
 		public void addEntity(Sd3dGameEntity entity)
 		{
-			mEntityList.add(entity);	
+			synchronized(this.mEntityList) {
+				mEntityList.add(entity);	
+			}
 		}
 		
 		public void reset()
@@ -239,8 +241,6 @@ public class Sd3dGame
         activity.getWindowManager().getDefaultDisplay().getMetrics(dm);	
         mDeviceRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
 		this.mRenderer.updateScreenResolution(dm.widthPixels,dm.heightPixels);
-//		screenWidth = dm.widthPixels;
-//		screenHeight = dm.heightPixels;
 	}
 	
 	public void init(SurfaceHolder holder)
@@ -303,9 +303,7 @@ public class Sd3dGame
 	 */
 	private boolean mHasPickRequest = false;
 	private MotionEvent mPickRequestEvent;
-	//public int mPickX;
-	//public int mPickY;	
-	
+
 	public boolean isShowFps() {
 		return mShowFps;
 	}
