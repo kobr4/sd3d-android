@@ -37,6 +37,16 @@ public class Sd3dGame
 {	
 	public enum Sd3dInputEventType{ACCELEROMETER,TOUCH,KEYBOARD};
 	public boolean invalidateRenderElements;
+	private boolean showDebugConsole;
+	
+	public boolean isShowDebugConsole() {
+		return showDebugConsole;
+	}
+
+	public void setShowDebugConsole(boolean showDebugConsole) {
+		this.showDebugConsole = showDebugConsole;
+	}
+
 	private ArrayList<Sd3dFrameProcessorInterface> mArray = new ArrayList<Sd3dFrameProcessorInterface>();
 	
 	private Sd3dObject pickAt(int x,int y) {
@@ -214,8 +224,10 @@ public class Sd3dGame
 				invalidateRenderElements = false;
 			}
 		}
-			
-			Sd3dLogger.render();
+		
+			if (showDebugConsole) {
+				Sd3dLogger.render();
+			}
 		}
 
 	}	
